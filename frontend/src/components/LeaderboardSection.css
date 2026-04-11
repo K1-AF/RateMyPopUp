@@ -1,7 +1,8 @@
 /* Leaderboards — home page */
 
 .leaderboard-section {
-  background: #fdfbf9;
+  width: 100%;
+  background: transparent;
   padding: 2rem 1.25rem 2.75rem;
 }
 
