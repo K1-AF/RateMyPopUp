@@ -1,0 +1,229 @@
+/* Business landing — claim company, search, benefits */
+
+.business-page {
+  flex: 1;
+  width: 100%;
+  padding: 1.5rem 1.25rem 3.5rem;
+  background: #ffffff;
+}
+
+.business-page__inner {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.business-page__back {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-decoration: none;
+}
+
+.business-page__back:hover {
+  color: #e91e8c;
+}
+
+.business-page__back:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.business-hero {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.business-hero__icon-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.business-hero__icon {
+  width: 4.5rem;
+  height: 4.5rem;
+  color: #e91e8c;
+  stroke-width: 1.5;
+}
+
+.business-hero__title {
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.75rem, 4.5vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-dark, #2d2640);
+}
+
+.business-hero__lead {
+  margin: 0 auto;
+  max-width: 26rem;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--text-muted, #5c5568);
+}
+
+/* Search row */
+
+.business-search {
+  margin-bottom: 2.75rem;
+}
+
+.business-search__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: stretch;
+}
+
+.business-search__input-wrap {
+  position: relative;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.business-search__icon {
+  position: absolute;
+  left: 0.95rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.business-search__input {
+  width: 100%;
+  padding: 0.8rem 1rem 0.8rem 2.65rem;
+  font: inherit;
+  font-size: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text-dark, #2d2640);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.business-search__input::placeholder {
+  color: #9ca3af;
+}
+
+.business-search__input:hover {
+  border-color: #d1d5db;
+}
+
+.business-search__input:focus {
+  outline: none;
+  border-color: #e91e8c;
+  box-shadow: 0 0 0 3px rgba(233, 30, 140, 0.15);
+}
+
+.business-search__submit {
+  flex: 0 0 auto;
+  padding: 0.8rem 1.5rem;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  background: linear-gradient(
+    105deg,
+    #e91e8c 0%,
+    #c026d3 45%,
+    #7c3aed 100%
+  );
+  box-shadow: 0 4px 18px rgba(124, 58, 237, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.business-search__submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(124, 58, 237, 0.42);
+}
+
+.business-search__submit:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 3px;
+}
+
+/* What you get */
+
+.business-benefits__title {
+  margin: 0 0 1.25rem;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-align: center;
+  color: var(--text-dark, #2d2640);
+}
+
+.business-benefits__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.business-card {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1.15rem 1.2rem;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.06);
+}
+
+.business-card__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    #e91e8c 0%,
+    #a855f7 55%,
+    #7c3aed 100%
+  );
+  color: #fff;
+}
+
+.business-card__icon-svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.business-card__body {
+  min-width: 0;
+}
+
+.business-card__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-dark, #2d2640);
+}
+
+.business-card__text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-muted, #5c5568);
+}
+
+@media (min-width: 640px) {
+  .business-search__row {
+    flex-wrap: nowrap;
+  }
+}
