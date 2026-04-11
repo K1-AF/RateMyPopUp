@@ -5,6 +5,8 @@
   --text-muted: #5c5568;
   --text-dark: #2d2640;
   --gradient-start: #e91e8c;
+  /* Solid headline pink (same as former gradient left stop — no gradient) */
+  --brand-pink: #e91e8c;
   --gradient-mid: #c026d3;
   --gradient-end: #7c3aed;
   --gold-star: #e8b923;

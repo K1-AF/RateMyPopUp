@@ -27,16 +27,9 @@
   outline-offset: 2px;
 }
 
-.text-gradient {
-  background: linear-gradient(
-    105deg,
-    #e91e8c 0%,
-    #c026d3 45%,
-    #7c3aed 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+/* Solid brand pink — avoids background-clip, which often clips descenders (y, g, p) */
+.text-brand {
+  color: var(--brand-pink, #e91e8c);
 }
 
 /* --- Header --- */
@@ -76,7 +69,9 @@
   height: 44px;
   object-fit: contain;
   border-radius: 10px;
-  box-shadow: 0 2px 12px rgba(124, 58, 237, 0.12);
+  /* Merge light JPG background with the header bar */
+  mix-blend-mode: multiply;
+  opacity: 0.94;
 }
 
 .brand-text {
@@ -174,6 +169,14 @@
 
 .hero-logo-wrap {
   margin-bottom: 0.5rem;
+  padding: 0.5rem 1rem 1.5rem;
+  /* Soft glow matching the page gradient so the asset reads as part of the scene */
+  background: radial-gradient(
+    ellipse 78% 68% at 50% 42%,
+    rgba(255, 248, 252, 0.9) 0%,
+    rgba(255, 243, 249, 0.4) 48%,
+    transparent 72%
+  );
 }
 
 .hero-logo {
@@ -181,15 +184,37 @@
   height: auto;
   display: block;
   margin: 0 auto;
-  filter: drop-shadow(0 12px 32px rgba(124, 58, 237, 0.15));
+  /*
+    multiply: light / white areas of the JPG take on the pink page color
+    (removes the “pasted on” rectangle). Slight saturation boost keeps the art vivid.
+  */
+  mix-blend-mode: multiply;
+  opacity: 0.97;
+  filter: saturate(1.06);
+  /* Fade the outer bounds into the page so edges don’t read as a hard crop */
+  -webkit-mask-image: radial-gradient(
+    ellipse 96% 92% at 50% 44%,
+    #000 0%,
+    #000 62%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 96% 92% at 50% 44%,
+    #000 0%,
+    #000 62%,
+    transparent 100%
+  );
 }
 
 .hero-title {
   font-size: clamp(2.5rem, 6vw, 3.75rem);
   font-weight: 800;
   letter-spacing: -0.03em;
-  line-height: 1.05;
+  /* Room for descenders (e.g. “y” in RateMyPopUp); tight line-height + clip:text caused clipping */
+  line-height: 1.18;
   margin: 0.75rem 0 0.5rem;
+  padding-bottom: 0.06em;
+  overflow: visible;
 }
 
 .hero-tagline {

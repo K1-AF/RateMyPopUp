@@ -63,7 +63,7 @@ export default function App() {
               height={44}
               decoding="async"
             />
-            <span className="brand-text text-gradient">RateMyPopUp</span>
+            <span className="brand-text text-brand">RateMyPopUp</span>
           </a>
 
           <nav className="site-nav" aria-label="Primary">
@@ -119,7 +119,7 @@ export default function App() {
             />
           </div>
 
-          <h1 id="hero-title" className="hero-title text-gradient">
+          <h1 id="hero-title" className="hero-title text-brand">
             RateMyPopUp
           </h1>
           <p className="hero-tagline">Discover · Rate · Review</p>
@@ -148,59 +148,17 @@ export default function App() {
           </div>
         </section>
 
-        <section
-          id="section-explore"
-          className="content-strip"
-          aria-labelledby="explore-heading"
-        >
-          <h2 id="explore-heading" className="strip-heading">
-            Explore pop-ups
-          </h2>
-          <p className="strip-text">
-            Browse events near you, compare goodie bags, and plan your next
-            haul.
-          </p>
-        </section>
-
-        <section
-          id="section-review"
-          className="content-strip content-strip--alt"
-          aria-labelledby="review-heading"
-        >
-          <h2 id="review-heading" className="strip-heading">
-            Rate &amp; review
-          </h2>
-          <p className="strip-text">
-            Share honest ratings for pop-ups you have attended and help the
-            community choose the best experiences.
-          </p>
-        </section>
-
-        <section
-          id="section-business"
-          className="content-strip"
-          aria-labelledby="business-heading"
-        >
-          <h2 id="business-heading" className="strip-heading">
-            For business
-          </h2>
-          <p className="strip-text">
-            List your pop-up, reach engaged shoppers, and grow with insights
-            from real reviews.
-          </p>
-        </section>
-
         <section id="stats" className="stats" aria-label="Community stats">
           <div className="stat">
-            <span className="stat-value text-gradient">2,847</span>
+            <span className="stat-value text-brand">2,847</span>
             <span className="stat-label">Reviews</span>
           </div>
           <div className="stat">
-            <span className="stat-value text-gradient">312</span>
+            <span className="stat-value text-brand">312</span>
             <span className="stat-label">Pop-Ups</span>
           </div>
           <div className="stat">
-            <span className="stat-value text-gradient">18k</span>
+            <span className="stat-value text-brand">18k</span>
             <span className="stat-label">Users</span>
           </div>
         </section>
