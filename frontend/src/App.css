@@ -105,6 +105,7 @@
   font-weight: 600;
   font-size: 0.95rem;
   color: var(--text-dark, #2d2640);
+  text-decoration: none;
   cursor: pointer;
   border-radius: 8px;
   transition: background 0.15s ease, color 0.15s ease;
@@ -211,6 +212,7 @@
   font-size: 1rem;
   cursor: pointer;
   border: 2px solid transparent;
+  text-decoration: none;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
