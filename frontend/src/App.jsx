@@ -1,21 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, Route, Routes } from 'react-router-dom'
 import logoImg from './assets/ratemypopup.png'
-import {
-  IconBuilding,
-  IconSearch,
-  IconStarFilled,
-  IconStarOutline,
-} from './components/Icons.jsx'
-import { BrowseLiveSections } from './components/BrowseLiveSections.jsx'
+import { IconBuilding, IconSearch, IconStarOutline } from './components/Icons.jsx'
+import HomePage from './pages/HomePage.jsx'
+import ReviewPage from './pages/ReviewPage.jsx'
 import './App.css'
-
-/**
- * Smooth-scroll to a section by id — used by nav and CTAs.
- */
-function scrollToSection(id) {
-  const el = document.getElementById(id)
-  el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
 
 export default function App() {
   const signInRef = useRef(null)
@@ -31,7 +20,6 @@ export default function App() {
     setSignInOpen(false)
   }, [])
 
-  // Sync state if dialog closed via Escape
   useEffect(() => {
     const dlg = signInRef.current
     if (!dlg) return
@@ -48,14 +36,7 @@ export default function App() {
 
       <header className="site-header" role="banner">
         <div className="header-inner">
-          <a
-            href="#top"
-            className="brand"
-            onClick={(e) => {
-              e.preventDefault()
-              scrollToSection('top')
-            }}
-          >
+          <Link to="/" className="brand">
             <img
               src={logoImg}
               alt=""
@@ -64,39 +45,30 @@ export default function App() {
               height={72}
               decoding="async"
             />
-          </a>
+          </Link>
 
           <nav className="site-nav" aria-label="Primary">
             <ul className="nav-list">
               <li>
-                <button
-                  type="button"
+                <Link
+                  to={{ pathname: '/', hash: 'section-explore' }}
                   className="nav-link"
-                  onClick={() => scrollToSection('section-explore')}
                 >
                   <IconSearch className="nav-icon" />
                   Explore
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  className="nav-link"
-                  onClick={() => scrollToSection('live-now')}
-                >
+                <Link to="/review" className="nav-link">
                   <IconStarOutline className="nav-icon" />
                   Review
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  className="nav-link"
-                  onClick={() => scrollToSection('stats')}
-                >
+                <Link to={{ pathname: '/', hash: 'stats' }} className="nav-link">
                   <IconBuilding className="nav-icon" />
                   For Business
-                </button>
+                </Link>
               </li>
             </ul>
             <button type="button" className="btn-sign-in" onClick={openSignIn}>
@@ -107,66 +79,16 @@ export default function App() {
       </header>
 
       <main id="main-content">
-        <section id="top" className="hero" aria-label="Home">
-          <div className="hero-logo-wrap">
-            <img
-              src={logoImg}
-              alt="RateMyPopUp — Discover, rate, and review pop-up beauty events"
-              className="hero-logo"
-              width={500}
-              height={500}
-              decoding="async"
-            />
-          </div>
-
-          <p className="hero-description">
-            The #1 platform to find pop-up events, rate goodie bags, and share
-            your haul with the community.
-          </p>
-
-          <div className="hero-ctas">
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => scrollToSection('live-now')}
-            >
-              <IconStarFilled className="btn-icon" ariaHidden />
-              Rate a Pop-Up
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => scrollToSection('section-explore')}
-            >
-              <IconSearch className="btn-icon" ariaHidden />
-              Explore
-            </button>
-          </div>
-        </section>
-
-        <BrowseLiveSections />
-
-        <section id="stats" className="stats" aria-label="Community stats">
-          <div className="stat">
-            <span className="stat-value text-brand">2,847</span>
-            <span className="stat-label">Reviews</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value text-brand">312</span>
-            <span className="stat-label">Pop-Ups</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value text-brand">18k</span>
-            <span className="stat-label">Users</span>
-          </div>
-        </section>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/review" element={<ReviewPage />} />
+        </Routes>
       </main>
 
       <footer className="site-footer">
         <p className="footer-copy">© {new Date().getFullYear()} RateMyPopUp</p>
       </footer>
 
-      {/* Sign-in placeholder — wire to real auth when backend is ready */}
       <dialog
         ref={signInRef}
         className="sign-in-dialog"
@@ -219,7 +141,6 @@ export default function App() {
         </div>
       </dialog>
 
-      {/* aria-live for dialog open state — helps assistive tech */}
       <span className="sr-only" aria-live="polite">
         {signInOpen ? 'Sign in dialog opened' : ''}
       </span>
