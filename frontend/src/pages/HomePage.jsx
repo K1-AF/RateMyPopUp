@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import logoImg from '../assets/ratemypopup.png'
 import { IconSearch, IconStarFilled } from '../components/Icons.jsx'
 import { BrowseLiveSections } from '../components/BrowseLiveSections.jsx'
+import { LeaderboardSection } from '../components/LeaderboardSection.jsx'
 
 /**
  * Landing page: hero, browse/live sections, community stats.
@@ -49,6 +50,8 @@ export default function HomePage() {
       </section>
 
       <BrowseLiveSections />
+
+      <LeaderboardSection />
 
       <section id="stats" className="stats" aria-label="Community stats">
         <div className="stat">
