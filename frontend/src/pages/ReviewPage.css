@@ -302,6 +302,42 @@
   word-break: break-word;
 }
 
+/* Single-line text (e.g. "Other" follow-up fields) — matches textarea/search styling */
+.review-text-input {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fafafa;
+  color: var(--text-dark, #2d2640);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.review-text-input::placeholder {
+  color: #9ca3af;
+}
+
+.review-text-input:hover {
+  border-color: #d1d5db;
+}
+
+.review-text-input:focus {
+  outline: none;
+  border-color: #e91e8c;
+  box-shadow: 0 0 0 3px rgba(233, 30, 140, 0.15);
+  background: #fff;
+}
+
+.review-field__other-followup {
+  margin-top: 0.75rem;
+  width: 100%;
+}
+
 .review-textarea {
   width: 100%;
   padding: 0.75rem 0.9rem;

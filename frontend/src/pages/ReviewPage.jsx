@@ -25,6 +25,8 @@ const HEAR_ABOUT_OPTIONS = [
 ]
 
 const MAX_PROOF_BYTES = 5 * 1024 * 1024
+/** Max length for "Other" free-text fields (limits abuse / oversized payloads). */
+const MAX_OTHER_TEXT = 200
 
 function IconCamera({ className }) {
   return (
@@ -76,6 +78,8 @@ export default function ReviewPage() {
   const [goodieQuality, setGoodieQuality] = useState(0)
   const [visitMain, setVisitMain] = useState(() => new Set())
   const [hearAbout, setHearAbout] = useState('')
+  const [securedOther, setSecuredOther] = useState('')
+  const [hearAboutOther, setHearAboutOther] = useState('')
   const [proofFile, setProofFile] = useState(null)
   const [proofError, setProofError] = useState('')
   const [comments, setComments] = useState('')
@@ -99,13 +103,20 @@ export default function ReviewPage() {
   }, [])
 
   const toggleChip = useCallback((label) => {
+    let togglingOffOther = false
     setSecured((prev) => {
       const next = new Set(prev)
-      if (next.has(label)) next.delete(label)
-      else next.add(label)
+      if (next.has(label)) {
+        togglingOffOther = label === 'Other'
+        next.delete(label)
+      } else {
+        next.add(label)
+      }
       return next
     })
+    if (togglingOffOther) setSecuredOther('')
     clearError('secured')
+    clearError('securedOther')
   }, [clearError])
 
   const toggleVisitMain = useCallback((label) => {
@@ -120,8 +131,15 @@ export default function ReviewPage() {
 
   const selectHearAbout = useCallback(
     (opt) => {
-      setHearAbout((prev) => (prev === opt ? '' : opt))
+      let leavingOther = false
+      setHearAbout((prev) => {
+        const next = prev === opt ? '' : opt
+        leavingOther = prev === 'Other' && next !== 'Other'
+        return next
+      })
+      if (leavingOther) setHearAboutOther('')
       clearError('hearAbout')
+      clearError('hearAboutOther')
     },
     [clearError],
   )
@@ -155,6 +173,8 @@ export default function ReviewPage() {
     }
     if (secured.size === 0) {
       e.secured = 'Select at least one option for what you secured.'
+    } else if (secured.has('Other') && !securedOther.trim()) {
+      e.securedOther = 'Please describe what else you secured.'
     }
     if (vibe < 1) {
       e.vibe = 'Rate the vibe.'
@@ -170,9 +190,21 @@ export default function ReviewPage() {
     }
     if (!hearAbout) {
       e.hearAbout = 'Select how you heard about this pop-up.'
+    } else if (hearAbout === 'Other' && !hearAboutOther.trim()) {
+      e.hearAboutOther = 'Please specify how you heard about this pop-up.'
     }
     return e
-  }, [companyQuery, secured, vibe, queue, goodieQuality, visitMain, hearAbout])
+  }, [
+    companyQuery,
+    secured,
+    securedOther,
+    vibe,
+    queue,
+    goodieQuality,
+    visitMain,
+    hearAbout,
+    hearAboutOther,
+  ])
 
   const focusFirstInvalid = useCallback((e) => {
     if (e.company) {
@@ -181,6 +213,10 @@ export default function ReviewPage() {
     }
     if (e.secured) {
       document.getElementById('secured-first')?.focus()
+      return
+    }
+    if (e.securedOther) {
+      document.getElementById('secured-other')?.focus()
       return
     }
     if (e.vibe) {
@@ -201,6 +237,10 @@ export default function ReviewPage() {
     }
     if (e.hearAbout) {
       document.getElementById('hear-first')?.focus()
+      return
+    }
+    if (e.hearAboutOther) {
+      document.getElementById('hear-about-other')?.focus()
     }
   }, [])
 
@@ -263,7 +303,7 @@ export default function ReviewPage() {
           </div>
 
           <fieldset
-            className={`review-field review-field--chips ${errors.secured ? 'review-field--invalid' : ''}`}
+            className={`review-field review-field--chips ${errors.secured || errors.securedOther ? 'review-field--invalid' : ''}`}
           >
             <legend className="review-field__label">
               What did you secure?{' '}
@@ -285,6 +325,39 @@ export default function ReviewPage() {
                 </button>
               ))}
             </div>
+            {secured.has('Other') ? (
+              <div className="review-field__other-followup">
+                <label className="review-field__label" htmlFor="secured-other">
+                  Describe other{' '}
+                  <abbr className="review-required" title="required">
+                    *
+                  </abbr>
+                </label>
+                <input
+                  id="secured-other"
+                  name="secured_other"
+                  type="text"
+                  className={`review-text-input ${errors.securedOther ? 'review-input--error' : ''}`}
+                  placeholder="What did you secure?"
+                  maxLength={MAX_OTHER_TEXT}
+                  autoComplete="off"
+                  value={securedOther}
+                  onChange={(ev) => {
+                    const v = ev.target.value.slice(0, MAX_OTHER_TEXT)
+                    setSecuredOther(v)
+                    clearError('securedOther')
+                  }}
+                  aria-required="true"
+                  aria-invalid={errors.securedOther ? 'true' : 'false'}
+                  aria-describedby={errors.securedOther ? 'secured-other-error' : undefined}
+                />
+                {errors.securedOther ? (
+                  <p id="secured-other-error" className="review-field__error" role="alert">
+                    {errors.securedOther}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             {errors.secured ? (
               <p className="review-field__error" role="alert">
                 {errors.secured}
@@ -359,7 +432,7 @@ export default function ReviewPage() {
           </fieldset>
 
           <fieldset
-            className={`review-field review-field--chips ${errors.hearAbout ? 'review-field--invalid' : ''}`}
+            className={`review-field review-field--chips ${errors.hearAbout || errors.hearAboutOther ? 'review-field--invalid' : ''}`}
           >
             <legend className="review-field__label">
               How did you hear about it?{' '}
@@ -382,6 +455,39 @@ export default function ReviewPage() {
                 </button>
               ))}
             </div>
+            {hearAbout === 'Other' ? (
+              <div className="review-field__other-followup">
+                <label className="review-field__label" htmlFor="hear-about-other">
+                  Please specify{' '}
+                  <abbr className="review-required" title="required">
+                    *
+                  </abbr>
+                </label>
+                <input
+                  id="hear-about-other"
+                  name="hear_about_other"
+                  type="text"
+                  className={`review-text-input ${errors.hearAboutOther ? 'review-input--error' : ''}`}
+                  placeholder="How did you hear about it?"
+                  maxLength={MAX_OTHER_TEXT}
+                  autoComplete="off"
+                  value={hearAboutOther}
+                  onChange={(ev) => {
+                    const v = ev.target.value.slice(0, MAX_OTHER_TEXT)
+                    setHearAboutOther(v)
+                    clearError('hearAboutOther')
+                  }}
+                  aria-required="true"
+                  aria-invalid={errors.hearAboutOther ? 'true' : 'false'}
+                  aria-describedby={errors.hearAboutOther ? 'hear-about-other-error' : undefined}
+                />
+                {errors.hearAboutOther ? (
+                  <p id="hear-about-other-error" className="review-field__error" role="alert">
+                    {errors.hearAboutOther}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             {errors.hearAbout ? (
               <p className="review-field__error" role="alert">
                 {errors.hearAbout}
