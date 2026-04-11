@@ -127,35 +127,6 @@
   opacity: 0.9;
 }
 
-.btn-sign-in {
-  padding: 0.55rem 1.35rem;
-  border: none;
-  border-radius: 999px;
-  font: inherit;
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #fff;
-  cursor: pointer;
-  background: linear-gradient(
-    105deg,
-    #e91e8c 0%,
-    #a855f7 50%,
-    #7c3aed 100%
-  );
-  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.btn-sign-in:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
-}
-
-.btn-sign-in:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
-}
-
 /* --- Hero --- */
 
 .hero {
@@ -530,82 +501,6 @@
   color: #8b8499;
 }
 
-/* Sign-in dialog */
-
-.sign-in-dialog {
-  padding: 0;
-  border: none;
-  border-radius: 16px;
-  max-width: calc(100vw - 2rem);
-  width: 400px;
-  box-shadow: 0 24px 80px rgba(45, 38, 64, 0.25);
-}
-
-.sign-in-dialog::backdrop {
-  background: rgba(45, 38, 64, 0.45);
-}
-
-.dialog-panel {
-  padding: 1.75rem;
-}
-
-.sign-in-dialog h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: var(--text-dark, #2d2640);
-}
-
-.dialog-lead {
-  margin: 0 0 1.25rem;
-  font-size: 0.9rem;
-  color: var(--text-muted, #5c5568);
-  line-height: 1.5;
-}
-
-.sign-in-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  text-align: left;
-}
-
-.sign-in-form label {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-dark, #2d2640);
-}
-
-.dialog-input {
-  width: 100%;
-  padding: 0.65rem 0.85rem;
-  margin-bottom: 0.35rem;
-  border: 1px solid rgba(92, 85, 104, 0.25);
-  border-radius: 10px;
-  font: inherit;
-  font-size: 1rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.dialog-input:focus {
-  outline: none;
-  border-color: #a855f7;
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
-}
-
-.dialog-actions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-  margin-top: 1rem;
-  flex-wrap: wrap;
-}
-
-.dialog-actions .btn {
-  padding: 0.6rem 1.25rem;
-  font-size: 0.95rem;
-}
-
 /* Mobile */
 
 @media (max-width: 640px) {
@@ -617,11 +512,6 @@
   .nav-list {
     width: 100%;
     justify-content: center;
-  }
-
-  .btn-sign-in {
-    width: 100%;
-    max-width: 200px;
   }
 
   .stats {
