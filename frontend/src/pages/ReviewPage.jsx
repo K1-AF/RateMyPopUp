@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { IconSearch } from '../components/Icons.jsx'
 import { StarRating } from '../components/StarRating.jsx'
 import './ReviewPage.css'
@@ -13,7 +13,7 @@ const SECURE_OPTIONS = [
   'Other',
 ]
 
-const VISIT_MAIN_OPTIONS = ['Freebies', 'Photos', 'Shopping', 'In the area']
+const VISIT_MAIN_OPTIONS = ['Freebies', 'Photos', 'Shopping', 'In the area', 'Other']
 
 const HEAR_ABOUT_OPTIONS = [
   'Instagram',
@@ -27,6 +27,8 @@ const HEAR_ABOUT_OPTIONS = [
 const MAX_PROOF_BYTES = 5 * 1024 * 1024
 /** Max length for "Other" free-text fields (limits abuse / oversized payloads). */
 const MAX_OTHER_TEXT = 200
+/** Time to show success copy before redirecting home (ms). */
+const SUCCESS_REDIRECT_MS = 2000
 
 function IconCamera({ className }) {
   return (
@@ -71,6 +73,7 @@ function IconSend({ className }) {
  * Review submission form — client-side validation only until API is wired.
  */
 export default function ReviewPage() {
+  const navigate = useNavigate()
   const [companyQuery, setCompanyQuery] = useState('')
   const [secured, setSecured] = useState(() => new Set())
   const [vibe, setVibe] = useState(0)
@@ -79,11 +82,13 @@ export default function ReviewPage() {
   const [visitMain, setVisitMain] = useState(() => new Set())
   const [hearAbout, setHearAbout] = useState('')
   const [securedOther, setSecuredOther] = useState('')
+  const [visitMainOther, setVisitMainOther] = useState('')
   const [hearAboutOther, setHearAboutOther] = useState('')
   const [proofFile, setProofFile] = useState(null)
   const [proofError, setProofError] = useState('')
   const [comments, setComments] = useState('')
   const [errors, setErrors] = useState({})
+  const [submitSuccess, setSubmitSuccess] = useState(false)
 
   useEffect(() => {
     const prev = document.title
@@ -92,6 +97,19 @@ export default function ReviewPage() {
       document.title = prev
     }
   }, [])
+
+  useEffect(() => {
+    if (!submitSuccess) return
+    document.getElementById('review-success-msg')?.focus()
+  }, [submitSuccess])
+
+  useEffect(() => {
+    if (!submitSuccess) return
+    const id = window.setTimeout(() => {
+      navigate('/', { replace: true })
+    }, SUCCESS_REDIRECT_MS)
+    return () => window.clearTimeout(id)
+  }, [submitSuccess, navigate])
 
   const clearError = useCallback((key) => {
     setErrors((prev) => {
@@ -120,13 +138,20 @@ export default function ReviewPage() {
   }, [clearError])
 
   const toggleVisitMain = useCallback((label) => {
+    let togglingOffOther = false
     setVisitMain((prev) => {
       const next = new Set(prev)
-      if (next.has(label)) next.delete(label)
-      else next.add(label)
+      if (next.has(label)) {
+        togglingOffOther = label === 'Other'
+        next.delete(label)
+      } else {
+        next.add(label)
+      }
       return next
     })
+    if (togglingOffOther) setVisitMainOther('')
     clearError('visitMain')
+    clearError('visitMainOther')
   }, [clearError])
 
   const selectHearAbout = useCallback(
@@ -187,6 +212,8 @@ export default function ReviewPage() {
     }
     if (visitMain.size === 0) {
       e.visitMain = 'Select at least one main reason for visiting.'
+    } else if (visitMain.has('Other') && !visitMainOther.trim()) {
+      e.visitMainOther = 'Please describe your other reason for visiting.'
     }
     if (!hearAbout) {
       e.hearAbout = 'Select how you heard about this pop-up.'
@@ -202,6 +229,7 @@ export default function ReviewPage() {
     queue,
     goodieQuality,
     visitMain,
+    visitMainOther,
     hearAbout,
     hearAboutOther,
   ])
@@ -235,6 +263,10 @@ export default function ReviewPage() {
       document.getElementById('visit-main-first')?.focus()
       return
     }
+    if (e.visitMainOther) {
+      document.getElementById('visit-main-other')?.focus()
+      return
+    }
     if (e.hearAbout) {
       document.getElementById('hear-first')?.focus()
       return
@@ -253,6 +285,7 @@ export default function ReviewPage() {
       return
     }
     // POST /api/reviews/ with CSRF + multipart when backend exists
+    setSubmitSuccess(true)
   }
 
   return (
@@ -267,6 +300,18 @@ export default function ReviewPage() {
           <p className="review-page__subtitle">Takes ~30 seconds ⚡</p>
         </header>
 
+        {submitSuccess ? (
+          <div
+            id="review-success-msg"
+            className="review-success"
+            tabIndex={-1}
+            role="status"
+            aria-live="polite"
+          >
+            <p className="review-success__title">Review uploaded!</p>
+            <p className="review-success__hint">Taking you home…</p>
+          </div>
+        ) : (
         <form className="review-form" onSubmit={handleSubmit} noValidate>
           <div className="review-field">
             <label className="review-field__label" htmlFor="company-search">
@@ -402,7 +447,7 @@ export default function ReviewPage() {
           </div>
 
           <fieldset
-            className={`review-field review-field--chips ${errors.visitMain ? 'review-field--invalid' : ''}`}
+            className={`review-field review-field--chips ${errors.visitMain || errors.visitMainOther ? 'review-field--invalid' : ''}`}
           >
             <legend className="review-field__label">
               Main reason for visiting{' '}
@@ -424,6 +469,39 @@ export default function ReviewPage() {
                 </button>
               ))}
             </div>
+            {visitMain.has('Other') ? (
+              <div className="review-field__other-followup">
+                <label className="review-field__label" htmlFor="visit-main-other">
+                  Describe other{' '}
+                  <abbr className="review-required" title="required">
+                    *
+                  </abbr>
+                </label>
+                <input
+                  id="visit-main-other"
+                  name="visit_main_other"
+                  type="text"
+                  className={`review-text-input ${errors.visitMainOther ? 'review-input--error' : ''}`}
+                  placeholder="Why did you visit?"
+                  maxLength={MAX_OTHER_TEXT}
+                  autoComplete="off"
+                  value={visitMainOther}
+                  onChange={(ev) => {
+                    const v = ev.target.value.slice(0, MAX_OTHER_TEXT)
+                    setVisitMainOther(v)
+                    clearError('visitMainOther')
+                  }}
+                  aria-required="true"
+                  aria-invalid={errors.visitMainOther ? 'true' : 'false'}
+                  aria-describedby={errors.visitMainOther ? 'visit-main-other-error' : undefined}
+                />
+                {errors.visitMainOther ? (
+                  <p id="visit-main-other-error" className="review-field__error" role="alert">
+                    {errors.visitMainOther}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             {errors.visitMain ? (
               <p className="review-field__error" role="alert">
                 {errors.visitMain}
@@ -543,6 +621,7 @@ export default function ReviewPage() {
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   )
