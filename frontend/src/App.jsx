@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import logoImg from './assets/ratemypopup.JPG'
+import logoImg from './assets/ratemypopup.png'
 import {
   IconBuilding,
   IconSearch,
   IconStarFilled,
   IconStarOutline,
 } from './components/Icons.jsx'
+import { BrowseLiveSections } from './components/BrowseLiveSections.jsx'
 import './App.css'
 
 /**
@@ -59,11 +60,10 @@ export default function App() {
               src={logoImg}
               alt=""
               className="brand-logo"
-              width={44}
-              height={44}
+              width={72}
+              height={72}
               decoding="async"
             />
-            <span className="brand-text text-brand">RateMyPopUp</span>
           </a>
 
           <nav className="site-nav" aria-label="Primary">
@@ -82,7 +82,7 @@ export default function App() {
                 <button
                   type="button"
                   className="nav-link"
-                  onClick={() => scrollToSection('section-review')}
+                  onClick={() => scrollToSection('live-now')}
                 >
                   <IconStarOutline className="nav-icon" />
                   Review
@@ -92,7 +92,7 @@ export default function App() {
                 <button
                   type="button"
                   className="nav-link"
-                  onClick={() => scrollToSection('section-business')}
+                  onClick={() => scrollToSection('stats')}
                 >
                   <IconBuilding className="nav-icon" />
                   For Business
@@ -107,22 +107,18 @@ export default function App() {
       </header>
 
       <main id="main-content">
-        <section id="top" className="hero" aria-labelledby="hero-title">
+        <section id="top" className="hero" aria-label="Home">
           <div className="hero-logo-wrap">
             <img
               src={logoImg}
               alt="RateMyPopUp — Discover, rate, and review pop-up beauty events"
               className="hero-logo"
-              width={280}
-              height={320}
+              width={500}
+              height={500}
               decoding="async"
             />
           </div>
 
-          <h1 id="hero-title" className="hero-title text-brand">
-            RateMyPopUp
-          </h1>
-          <p className="hero-tagline">Discover · Rate · Review</p>
           <p className="hero-description">
             The #1 platform to find pop-up events, rate goodie bags, and share
             your haul with the community.
@@ -132,7 +128,7 @@ export default function App() {
             <button
               type="button"
               className="btn btn-primary"
-              onClick={() => scrollToSection('section-review')}
+              onClick={() => scrollToSection('live-now')}
             >
               <IconStarFilled className="btn-icon" ariaHidden />
               Rate a Pop-Up
@@ -147,6 +143,8 @@ export default function App() {
             </button>
           </div>
         </section>
+
+        <BrowseLiveSections />
 
         <section id="stats" className="stats" aria-label="Community stats">
           <div className="stat">

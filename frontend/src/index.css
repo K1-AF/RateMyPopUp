@@ -1,7 +1,7 @@
 /* Global base — RateMyPopUp landing */
 :root {
-  --page-bg-start: #fff5f8;
-  --page-bg-end: #fef7fb;
+  --page-bg-start: #ffffff;
+  --page-bg-end: #ffffff;
   --text-muted: #5c5568;
   --text-dark: #2d2640;
   --gradient-start: #e91e8c;
@@ -31,12 +31,7 @@
 body {
   margin: 0;
   min-height: 100svh;
-  background: linear-gradient(
-    180deg,
-    var(--page-bg-start) 0%,
-    var(--page-bg-end) 45%,
-    #ffffff 100%
-  );
+  background: #ffffff;
 }
 
 #root {
@@ -46,6 +41,7 @@ body {
   margin: 0;
   text-align: initial;
   border: none;
+  background: #ffffff;
 }
 
 /* Visually hidden — screen readers only */
