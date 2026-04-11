@@ -12,7 +12,7 @@ const FEATURES = [
   {
     id: 'feedback',
     title: 'Feedback Reports',
-    body: "See what percentage loved your goodie bag and what they'd want improved.",
+    body: "See what percentage loved your pop-up and what they'd want improved.",
     icon: IconChartBars,
   },
   {
@@ -61,9 +61,9 @@ export default function BusinessPage() {
           <div className="business-hero__icon-wrap" aria-hidden>
             <IconBuilding className="business-hero__icon" ariaHidden />
           </div>
-          <h1 className="business-hero__title">Claim Your Company</h1>
+          <h1 className="business-hero__title">Get Ahead</h1>
           <p className="business-hero__lead">
-            Get insights into what attendees really think. Improve your pop-up game.
+            Explore insights into what attendees really think. Improve your pop-up game.
           </p>
         </header>
 
