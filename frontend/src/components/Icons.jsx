@@ -97,6 +97,70 @@ export function IconChartBars({ className = '', ariaHidden = true }) {
   )
 }
 
+/** Upward trend — leaderboard “Best” tab. */
+export function IconTrendUp({ className = '', ariaHidden = true }) {
+  return (
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden={ariaHidden}
+    >
+      <path
+        d="M23 6v6h-6M23 6l-9.5 9.5-5-5L1 18"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/** Downward trend — leaderboard “Worst” tab. */
+export function IconTrendDown({ className = '', ariaHidden = true }) {
+  return (
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden={ariaHidden}
+    >
+      <path
+        d="M23 18v-6h-6M23 18l-9.5-9.5-5 5L1 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/** Clock — leaderboard “Queue” tab. */
+export function IconClock({ className = '', ariaHidden = true }) {
+  return (
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden={ariaHidden}
+    >
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 7v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export function IconStarFilled({ className = '', ariaHidden = true }) {
   return (
     <svg

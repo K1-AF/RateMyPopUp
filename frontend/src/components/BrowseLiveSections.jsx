@@ -92,50 +92,54 @@ export function BrowseLiveSections() {
         className="browse-section"
         aria-labelledby="browse-heading"
       >
-        <h2 id="browse-heading" className="section-heading">
-          Browse by Category
-        </h2>
-        <ul className="category-grid">
-          {CATEGORIES.map((item) => {
-            const IconComponent = item.Icon
-            return (
-              <li key={item.id}>
-                <button type="button" className={`category-card ${item.cardClass}`}>
-                  <IconComponent className="category-card__icon" />
-                  <span className="category-card__label">{item.label}</span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+        <div className="browse-section__container">
+          <h2 id="browse-heading" className="section-heading">
+            Browse by Category
+          </h2>
+          <ul className="category-grid">
+            {CATEGORIES.map((item) => {
+              const IconComponent = item.Icon
+              return (
+                <li key={item.id}>
+                  <button type="button" className={`category-card ${item.cardClass}`}>
+                    <IconComponent className="category-card__icon" />
+                    <span className="category-card__label">{item.label}</span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
       </section>
 
       <section id="live-now" className="live-section" aria-labelledby="live-heading">
-        <div className="live-section__title-row">
-          <span className="live-section__record" aria-hidden />
-          <h2 id="live-heading" className="section-heading section-heading--live">
-            Live Now
-          </h2>
+        <div className="live-section__container">
+          <div className="live-section__title-row">
+            <span className="live-section__record" aria-hidden />
+            <h2 id="live-heading" className="section-heading section-heading--live">
+              Live Now
+            </h2>
+          </div>
+          <p className="live-section__sub">Wait times &amp; goodie bag availability</p>
+          <ul className="live-list">
+            {LIVE_ROWS.map((row) => (
+              <li key={row.id} className="live-row">
+                <span className={`live-row__dot ${row.dotClass}`} aria-hidden />
+                <span className="live-row__title">{row.title}</span>
+                <div className="live-row__meta">
+                  <span className="live-row__chip">
+                    <IconClock className="live-row__chip-icon" />
+                    {row.wait}
+                  </span>
+                  <span className="live-row__chip">
+                    <IconBagSmall className="live-row__chip-icon" />
+                    {row.bag}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
-        <p className="live-section__sub">Wait times &amp; goodie bag availability</p>
-        <ul className="live-list">
-          {LIVE_ROWS.map((row) => (
-            <li key={row.id} className="live-row">
-              <span className={`live-row__dot ${row.dotClass}`} aria-hidden />
-              <span className="live-row__title">{row.title}</span>
-              <div className="live-row__meta">
-                <span className="live-row__chip">
-                  <IconClock className="live-row__chip-icon" />
-                  {row.wait}
-                </span>
-                <span className="live-row__chip">
-                  <IconBagSmall className="live-row__chip-icon" />
-                  {row.bag}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
       </section>
     </>
   )
