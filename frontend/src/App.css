@@ -205,22 +205,18 @@
 
 .btn-primary {
   color: #fff;
-  background: linear-gradient(
-    105deg,
-    #e91e8c 0%,
-    #c026d3 45%,
-    #7c3aed 100%
-  );
-  box-shadow: 0 6px 24px rgba(192, 38, 211, 0.35);
+  background: var(--brand-pink, #e91e8c);
+  box-shadow: 0 6px 24px rgba(233, 30, 140, 0.35);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(124, 58, 237, 0.45);
+  background: #d9157e;
+  box-shadow: 0 8px 28px rgba(233, 30, 140, 0.45);
 }
 
 .btn-primary:focus-visible {
-  outline: 2px solid #7c3aed;
+  outline: 2px solid #be185d;
   outline-offset: 3px;
 }
 
