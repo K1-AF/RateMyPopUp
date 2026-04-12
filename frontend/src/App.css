@@ -84,9 +84,9 @@
 /* Wide logo asset — compact strip in the header */
 .brand-logo {
   display: block;
-  height: min(52px, 12vh);
+  height: min(64px, 15vh);
   width: auto;
-  max-width: min(168px, 30vw);
+  max-width: min(220px, 42vw);
   object-fit: contain;
   border-radius: 8px;
   background: transparent;
@@ -545,8 +545,8 @@
   }
 
   .brand-logo {
-    max-width: min(140px, 42vw);
-    height: min(48px, 11vh);
+    max-width: min(180px, 52vw);
+    height: min(56px, 13vh);
   }
 }
 

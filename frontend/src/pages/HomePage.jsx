@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import homeBannerImg from '../assets/homebanner.png'
 import { IconSearch, IconStarFilled } from '../components/Icons.jsx'
 import { BrowseLiveSections } from '../components/BrowseLiveSections.jsx'
 import { LeaderboardSection } from '../components/LeaderboardSection.jsx'
@@ -20,7 +21,19 @@ export default function HomePage() {
 
   return (
     <div className="home-page">
-      <section id="top" className="hero" aria-label="Home">
+      <div id="top" className="home-banner">
+        <img
+          src={homeBannerImg}
+          alt=""
+          className="home-banner__img"
+          width={1167}
+          height={507}
+          decoding="async"
+          fetchPriority="high"
+        />
+      </div>
+
+      <section className="hero" aria-label="Home">
         <div className="hero__inner">
           <p className="hero-description">
             The #1 platform to find pop-up events, rate goodie bags, and share
