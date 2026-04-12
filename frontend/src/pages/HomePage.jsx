@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import logoImg from '../assets/ratemypopup.png'
 import { IconSearch, IconStarFilled } from '../components/Icons.jsx'
 import { BrowseLiveSections } from '../components/BrowseLiveSections.jsx'
 import { LeaderboardSection } from '../components/LeaderboardSection.jsx'
@@ -21,19 +20,7 @@ export default function HomePage() {
 
   return (
     <div className="home-page">
-      <div id="top" className="home-banner">
-        <img
-          src={logoImg}
-          alt="RateMyPopUp — Discover, rate, review"
-          className="home-banner__img"
-          width={1037}
-          height={197}
-          decoding="async"
-          fetchPriority="high"
-        />
-      </div>
-
-      <section className="hero" aria-label="Home">
+      <section id="top" className="hero" aria-label="Home">
         <div className="hero__inner">
           <p className="hero-description">
             The #1 platform to find pop-up events, rate goodie bags, and share

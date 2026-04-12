@@ -54,11 +54,21 @@
 .header-inner {
   max-width: 1120px;
   margin: 0 auto;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.header-col--left {
+  justify-self: start;
+  min-width: 0;
+}
+
+.header-col--right {
+  justify-self: end;
+  /* Wide enough that nav links stay on one row (with .nav-list flex-wrap: nowrap) */
+  min-width: min-content;
 }
 
 .brand {
@@ -71,11 +81,14 @@
   letter-spacing: -0.02em;
 }
 
+/* Wide logo asset — compact strip in the header */
 .brand-logo {
-  width: 72px;
-  height: 72px;
-  object-fit: cover;
-  border-radius: 12px;
+  display: block;
+  height: min(52px, 12vh);
+  width: auto;
+  max-width: min(168px, 30vw);
+  object-fit: contain;
+  border-radius: 8px;
   background: transparent;
 }
 
@@ -87,7 +100,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem 1.25rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
 }
 
@@ -97,8 +110,8 @@
   padding: 0;
   display: flex;
   align-items: center;
-  gap: 0.25rem 1rem;
-  flex-wrap: wrap;
+  gap: 0.25rem 0.65rem;
+  flex-wrap: nowrap;
 }
 
 .nav-link {
@@ -526,15 +539,33 @@
 
 /* Mobile */
 
+@media (max-width: 768px) {
+  .header-inner {
+    gap: 0.5rem;
+  }
+
+  .brand-logo {
+    max-width: min(140px, 42vw);
+    height: min(48px, 11vh);
+  }
+}
+
 @media (max-width: 640px) {
   .site-nav {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-end;
   }
 
   .nav-list {
-    width: 100%;
-    justify-content: center;
+    width: auto;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 0.2rem 0.45rem;
+  }
+
+  .nav-link {
+    font-size: 0.88rem;
+    padding: 0.4rem 0.35rem;
   }
 
   .stats__inner {

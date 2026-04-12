@@ -1,5 +1,5 @@
 import { Link, Route, Routes } from 'react-router-dom'
-import homeLogoImg from './assets/flavicon.jpg'
+import bannerLogoImg from './assets/ratemypopup.png'
 import { IconBuilding, IconSearch, IconStarOutline } from './components/Icons.jsx'
 import BusinessPage from './pages/BusinessPage.jsx'
 import HomePage from './pages/HomePage.jsx'
@@ -15,42 +15,46 @@ export default function App() {
 
       <header className="site-header" role="banner">
         <div className="header-inner">
-          <Link to="/" className="brand" aria-label="Home">
-            <img
-              src={homeLogoImg}
-              alt=""
-              className="brand-logo"
-              width={72}
-              height={72}
-              decoding="async"
-            />
-          </Link>
+          <div className="header-col header-col--left">
+            <Link to="/" className="brand" aria-label="Home">
+              <img
+                src={bannerLogoImg}
+                alt=""
+                className="brand-logo"
+                width={1037}
+                height={197}
+                decoding="async"
+              />
+            </Link>
+          </div>
 
-          <nav className="site-nav" aria-label="Primary">
-            <ul className="nav-list">
-              <li>
-                <Link
-                  to={{ pathname: '/', hash: 'section-explore' }}
-                  className="nav-link"
-                >
-                  <IconSearch className="nav-icon" />
-                  Explore
-                </Link>
-              </li>
-              <li>
-                <Link to="/review" className="nav-link">
-                  <IconStarOutline className="nav-icon" />
-                  Review
-                </Link>
-              </li>
-              <li>
-                <Link to="/business" className="nav-link">
-                  <IconBuilding className="nav-icon" />
-                  For Business
-                </Link>
-              </li>
-            </ul>
-          </nav>
+          <div className="header-col header-col--right">
+            <nav className="site-nav" aria-label="Primary">
+              <ul className="nav-list">
+                <li>
+                  <Link
+                    to={{ pathname: '/', hash: 'section-explore' }}
+                    className="nav-link"
+                  >
+                    <IconSearch className="nav-icon" />
+                    Explore
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/review" className="nav-link">
+                    <IconStarOutline className="nav-icon" />
+                    Review
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/business" className="nav-link">
+                    <IconBuilding className="nav-icon" />
+                    For Business
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+          </div>
         </div>
       </header>
 
