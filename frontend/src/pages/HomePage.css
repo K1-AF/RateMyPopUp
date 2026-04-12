@@ -3,6 +3,21 @@
  * the entire viewport width (not only behind max-width columns).
  */
 
+/* Full-width top banner (ratemypopup.png) — edge to edge below site header */
+.home-banner {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  background: #e8c4c8;
+}
+
+.home-banner__img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .home-page {
   flex: 1;
   width: 100%;
@@ -26,10 +41,11 @@
   );
 }
 
-/* Hero: mostly white at top; gradient shows toward bottom and fills width */
+/* Hero: copy + CTAs below banner */
 .home-page .hero {
   background: transparent;
-  min-height: min(90svh, 52rem);
+  min-height: unset;
+  padding-top: 2rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
