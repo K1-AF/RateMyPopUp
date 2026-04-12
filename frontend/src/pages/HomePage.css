@@ -3,36 +3,82 @@
  * the entire viewport width (not only behind max-width columns).
  */
 
+/* Full-width top banner (ratemypopup.png) — edge to edge below site header */
+.home-banner {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  background: #e5c5c6;
+  /* Remove subpixel gap below the image (was showing body/main white as a hairline) */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.home-banner__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+}
+
 .home-page {
   flex: 1;
   width: 100%;
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  /* Top matches banner (#e5c5c6) so any 1px seam isn’t a near-white flash */
   background: linear-gradient(
     180deg,
-    #ffffff 0%,
-    #ffffff 8%,
-    #fffafd 16%,
-    #fef5fb 26%,
-    #faf5ff 38%,
-    #f3edff 48%,
-    #edf4ff 58%,
-    #f0f4ff 68%,
-    #f8f6ff 78%,
+    #e5c5c6 0%,
+    #e5c5c6 1.5%,
+    #fefbfc 4%,
+    #faf0f3 8%,
+    #fffafd 12%,
+    #fef5fb 18%,
+    #faf5ff 28%,
+    #f3edff 38%,
+    #edf4ff 48%,
+    #e8f0ff 56%,
+    #f0f4ff 64%,
+    #f5f7ff 72%,
+    #f8f6ff 80%,
     #fdf8f8 88%,
     #fff8fb 94%,
     #ffffff 100%
   );
 }
 
-/* Hero: mostly white at top; gradient shows toward bottom and fills width */
+/* Strong, long gradient under banner — viewport-tied min-height so it stays visible
+   and continuous (not a quick flash to white) regardless of total page length */
 .home-page .hero {
-  background: transparent;
-  min-height: min(90svh, 52rem);
+  /* Overlap banner by 1px so any anti-aliasing / rounding gap doesn’t flash white */
+  margin-top: -5px;
+  min-height: min(58vh, 38rem);
+  padding-top: 2.5rem;
+  padding-bottom: 3rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  border: 0;
+  background: linear-gradient(
+    180deg,
+    #e5c5c6 0%,
+    #e2b9bf 10%,
+    #e5c2c8 20%,
+    #e9ccd2 30%,
+    #edd6dc 40%,
+    #f1e0e5 50%,
+    #f5e9ee 60%,
+    #f8f0f3 72%,
+    #fbf5f7 85%,
+    #fdf8fa 94%,
+    #fefbfc 100%
+  );
 }
 
 .home-page .browse-section,

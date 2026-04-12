@@ -21,19 +21,20 @@ export default function HomePage() {
 
   return (
     <div className="home-page">
-      <section id="top" className="hero" aria-label="Home">
-        <div className="hero__inner">
-          <div className="hero-logo-wrap">
-            <img
-              src={logoImg}
-              alt="RateMyPopUp — Discover, rate, and review pop-up beauty events"
-              className="hero-logo"
-              width={500}
-              height={500}
-              decoding="async"
-            />
-          </div>
+      <div id="top" className="home-banner">
+        <img
+          src={logoImg}
+          alt="RateMyPopUp — Discover, rate, review"
+          className="home-banner__img"
+          width={1037}
+          height={197}
+          decoding="async"
+          fetchPriority="high"
+        />
+      </div>
 
+      <section className="hero" aria-label="Home">
+        <div className="hero__inner">
           <p className="hero-description">
             The #1 platform to find pop-up events, rate goodie bags, and share
             your haul with the community.
