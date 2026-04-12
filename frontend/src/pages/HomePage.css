@@ -3,26 +3,28 @@
  * the entire viewport width (not only behind max-width columns).
  */
 
-/* Full-width top banner (ratemypopup.png) — edge to edge below site header */
+/* Full-bleed banner: fills viewport below sticky header (home only) */
 .home-banner {
+  --home-header-offset: 5.75rem;
   width: 100%;
   margin: 0;
   padding: 0;
   line-height: 0;
-  background: #e5c5c6;
-  /* Remove subpixel gap below the image (was showing body/main white as a hairline) */
-  display: flex;
-  flex-direction: column;
+  background: #f0d4d8;
+  position: relative;
   overflow: hidden;
+  /* First screen below nav; aligns #top with sticky header when scrolling */
+  height: calc(100svh - var(--home-header-offset));
+  scroll-margin-top: var(--home-header-offset);
 }
 
 .home-banner__img {
-  display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
-  margin: 0;
-  padding: 0;
-  flex-shrink: 0;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
 }
 
 .home-page {
@@ -31,7 +33,6 @@
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  /* Top matches banner (#e5c5c6) so any 1px seam isn’t a near-white flash */
   background: linear-gradient(
     180deg,
     #e5c5c6 0%,
@@ -53,12 +54,10 @@
   );
 }
 
-/* Strong, long gradient under banner — viewport-tied min-height so it stays visible
-   and continuous (not a quick flash to white) regardless of total page length */
+/* Hero — sits below full-viewport banner */
 .home-page .hero {
-  /* Overlap banner by 1px so any anti-aliasing / rounding gap doesn’t flash white */
-  margin-top: -5px;
-  min-height: min(58vh, 38rem);
+  margin-top: -1px;
+  min-height: min(42vh, 30rem);
   padding-top: 2.5rem;
   padding-bottom: 3rem;
   display: flex;
@@ -68,9 +67,16 @@
   background: linear-gradient(
     180deg,
     #e5c5c6 0%,
-    #e2b9bf 30%,
-    #fefbfc 50%
-    #e5c5c6 10%,
+    #e2b9bf 10%,
+    #e5c2c8 20%,
+    #e9ccd2 30%,
+    #edd6dc 40%,
+    #f1e0e5 50%,
+    #f5e9ee 60%,
+    #f8f0f3 72%,
+    #fbf5f7 85%,
+    #fdf8fa 94%,
+    #fefbfc 100%
   );
 }
 

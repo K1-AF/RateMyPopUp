@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import logoImg from '../assets/ratemypopup.png'
+import homeBannerImg from '../assets/homebanner.png'
 import { IconSearch, IconStarFilled } from '../components/Icons.jsx'
 import { BrowseLiveSections } from '../components/BrowseLiveSections.jsx'
 import { LeaderboardSection } from '../components/LeaderboardSection.jsx'
@@ -23,11 +23,11 @@ export default function HomePage() {
     <div className="home-page">
       <div id="top" className="home-banner">
         <img
-          src={logoImg}
-          alt="RateMyPopUp — Discover, rate, review"
+          src={homeBannerImg}
+          alt=""
           className="home-banner__img"
-          width={1037}
-          height={197}
+          width={1167}
+          height={507}
           decoding="async"
           fetchPriority="high"
         />
