@@ -74,9 +74,9 @@
 .brand-logo {
   width: 72px;
   height: 72px;
-  object-fit: contain;
+  object-fit: cover;
   border-radius: 12px;
-  background: #ffffff;
+  background: transparent;
 }
 
 .brand-text {

@@ -1,5 +1,5 @@
 import { Link, Route, Routes } from 'react-router-dom'
-import logoImg from './assets/ratemypopup.png'
+import homeLogoImg from './assets/flavicon.jpg'
 import { IconBuilding, IconSearch, IconStarOutline } from './components/Icons.jsx'
 import BusinessPage from './pages/BusinessPage.jsx'
 import HomePage from './pages/HomePage.jsx'
@@ -15,9 +15,9 @@ export default function App() {
 
       <header className="site-header" role="banner">
         <div className="header-inner">
-          <Link to="/" className="brand">
+          <Link to="/" className="brand" aria-label="Home">
             <img
-              src={logoImg}
+              src={homeLogoImg}
               alt=""
               className="brand-logo"
               width={72}
