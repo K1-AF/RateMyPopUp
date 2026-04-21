@@ -10,6 +10,8 @@ const SECURE_OPTIONS = [
   'Full product',
   'Drink/Food',
   'Photo opportunity',
+  'Stickers',
+  'Tote bag',
   'Other',
 ]
 
