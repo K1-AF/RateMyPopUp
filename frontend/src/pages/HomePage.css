@@ -33,12 +33,50 @@
   opacity: 1;
 }
 
+.home-banner__hotspots {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.home-banner__hotspot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border: none;
+  border-radius: 1rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.home-banner__hotspot:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.95);
+  outline-offset: 2px;
+}
+
+.home-banner__tooltip {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  transform: translateY(-100%);
+  max-width: min(26rem, 72vw);
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(23, 12, 30, 0.86);
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: normal;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
 .home-banner__controls {
   position: absolute;
   left: 50%;
   bottom: 0.45rem;
   transform: translateX(-50%);
-  z-index: 2;
+  z-index: 5;
   display: flex;
   flex-direction: row;
   align-items: center;
