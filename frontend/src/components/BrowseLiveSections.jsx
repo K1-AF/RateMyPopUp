@@ -19,10 +19,29 @@ function IconBag({ className }) {
   )
 }
 
-function IconUtensils({ className }) {
+function IconBubbleTea({ className }) {
   return (
-    <svg className={className} width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
-      <path d="M3 2v7c0 1.5 1 3 3 3V22M8 2v20M21 2v4c0 1.5-1 3-3 3h-1M17 9v13" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      className={className}
+      width="28"
+      height="28"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M6 8h12l-1.2 12a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 8z" />
+      <path d="M5 8h14" />
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+      <path d="M10 5.2c.7-.4 1.5-.6 2-.6.8 0 1.6.2 2.2.7" />
+      <circle cx="10" cy="15" r="1" fill="currentColor" stroke="none" />
+      <circle cx="14" cy="14" r="1" fill="currentColor" stroke="none" />
+      <circle cx="11.5" cy="18" r="1" fill="currentColor" stroke="none" />
+      <circle cx="14.5" cy="18" r="1" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="18.5" r="0.9" fill="currentColor" stroke="none" />
     </svg>
   )
 }
@@ -56,7 +75,7 @@ function IconBagSmall({ className }) {
 const CATEGORIES = [
   { id: 'beauty', label: 'Beauty', Icon: IconSparkle, cardClass: 'category-card--beauty' },
   { id: 'fashion', label: 'Fashion', Icon: IconBag, cardClass: 'category-card--fashion' },
-  { id: 'food', label: 'Food & Drink', Icon: IconUtensils, cardClass: 'category-card--food' },
+  { id: 'food', label: 'Food & Drink', Icon: IconBubbleTea, cardClass: 'category-card--food' },
   { id: 'immersive', label: 'Immersive', Icon: IconEye, cardClass: 'category-card--immersive' },
 ]
 
