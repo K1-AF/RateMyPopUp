@@ -5,6 +5,7 @@ import homeBannerImg from '../assets/homebanner.png'
 import { IconSearch, IconStarFilled } from '../components/Icons.jsx'
 import { BrowseLiveSections } from '../components/BrowseLiveSections.jsx'
 import { LeaderboardSection } from '../components/LeaderboardSection.jsx'
+import { RecentReviewsCarousel } from '../components/RecentReviewsCarousel.jsx'
 import './HomePage.css'
 
 /**
@@ -257,6 +258,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <RecentReviewsCarousel />
 
       <BrowseLiveSections />
 
