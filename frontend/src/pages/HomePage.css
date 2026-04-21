@@ -25,6 +25,55 @@
   height: 100%;
   object-fit: cover;
   object-position: center center;
+  opacity: 0;
+  transition: opacity 320ms ease-in-out;
+}
+
+.home-banner__img.is-active {
+  opacity: 1;
+}
+
+.home-banner__controls {
+  position: absolute;
+  left: 50%;
+  bottom: 0.45rem;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.home-banner__dot {
+  flex: 0 0 auto;
+  width: 1.55rem;
+  height: 0.28rem;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: transform 150ms ease, background-color 150ms ease, opacity 150ms ease;
+  opacity: 0.85;
+}
+
+.home-banner__dot:hover {
+  transform: scale(1.06);
+}
+
+.home-banner__dot:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.home-banner__dot.is-active {
+  background: #ffffff;
+  opacity: 1;
 }
 
 .home-page {
