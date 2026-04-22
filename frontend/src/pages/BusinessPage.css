@@ -65,90 +65,28 @@
   color: var(--text-muted, #5c5568);
 }
 
-/* Search row */
-
-.business-search {
-  margin-bottom: 2.75rem;
+.business-contact {
+  margin: 2.4rem 0 0;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-muted, #5c5568);
 }
 
-.business-search__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  align-items: stretch;
+.business-contact a {
+  color: #e91e8c;
+  font-weight: 800;
+  text-decoration: none;
 }
 
-.business-search__input-wrap {
-  position: relative;
-  flex: 1 1 200px;
-  min-width: 0;
+.business-contact a:hover {
+  text-decoration: underline;
 }
 
-.business-search__icon {
-  position: absolute;
-  left: 0.95rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
-  pointer-events: none;
-}
-
-.business-search__input {
-  width: 100%;
-  padding: 0.8rem 1rem 0.8rem 2.65rem;
-  font: inherit;
-  font-size: 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  background: #fff;
-  color: var(--text-dark, #2d2640);
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.business-search__input::placeholder {
-  color: #9ca3af;
-}
-
-.business-search__input:hover {
-  border-color: #d1d5db;
-}
-
-.business-search__input:focus {
-  outline: none;
-  border-color: #e91e8c;
-  box-shadow: 0 0 0 3px rgba(233, 30, 140, 0.15);
-}
-
-.business-search__submit {
-  flex: 0 0 auto;
-  padding: 0.8rem 1.5rem;
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #fff;
-  border: none;
-  border-radius: 999px;
-  cursor: pointer;
-  background: linear-gradient(
-    105deg,
-    #e91e8c 0%,
-    #c026d3 45%,
-    #7c3aed 100%
-  );
-  box-shadow: 0 4px 18px rgba(124, 58, 237, 0.35);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.business-search__submit:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 22px rgba(124, 58, 237, 0.42);
-}
-
-.business-search__submit:focus-visible {
+.business-contact a:focus-visible {
   outline: 2px solid #7c3aed;
-  outline-offset: 3px;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* What you get */
@@ -222,8 +160,3 @@
   color: var(--text-muted, #5c5568);
 }
 
-@media (min-width: 640px) {
-  .business-search__row {
-    flex-wrap: nowrap;
-  }
-}

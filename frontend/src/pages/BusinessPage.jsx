@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   IconBuilding,
   IconChartBars,
-  IconSearch,
   IconStarOutline,
 } from '../components/Icons.jsx'
 import './BusinessPage.css'
@@ -30,11 +29,9 @@ const FEATURES = [
 ]
 
 /**
- * Business landing: claim a company profile and preview insights (search is client-only until API exists).
+ * Business landing: contact + benefits preview.
  */
 export default function BusinessPage() {
-  const [query, setQuery] = useState('')
-
   useEffect(() => {
     const prev = document.title
     document.title = 'For Business — RateMyPopUp'
@@ -42,13 +39,6 @@ export default function BusinessPage() {
       document.title = prev
     }
   }, [])
-
-  const onSearch = useCallback((e) => {
-    e.preventDefault()
-    const q = query.trim()
-    if (!q) return
-    // Placeholder: wire to company search / claim flow when backend is ready
-  }, [query])
 
   return (
     <div className="business-page">
@@ -61,35 +51,11 @@ export default function BusinessPage() {
           <div className="business-hero__icon-wrap" aria-hidden>
             <IconBuilding className="business-hero__icon" ariaHidden />
           </div>
-          <h1 className="business-hero__title">Get Ahead</h1>
+          <h1 className="business-hero__title">Business owner?</h1>
           <p className="business-hero__lead">
             Explore insights into what attendees really think. Improve your pop-up game.
           </p>
         </header>
-
-        <form className="business-search" onSubmit={onSearch} noValidate>
-          <label className="sr-only" htmlFor="business-company-search">
-            Search for your company
-          </label>
-          <div className="business-search__row">
-            <div className="business-search__input-wrap">
-              <IconSearch className="business-search__icon" ariaHidden />
-              <input
-                id="business-company-search"
-                name="company"
-                type="search"
-                className="business-search__input"
-                placeholder="Search your company..."
-                autoComplete="organization"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </div>
-            <button type="submit" className="business-search__submit">
-              Search
-            </button>
-          </div>
-        </form>
 
         <section className="business-benefits" aria-labelledby="business-benefits-heading">
           <h2 id="business-benefits-heading" className="business-benefits__title">
@@ -112,6 +78,11 @@ export default function BusinessPage() {
             })}
           </ul>
         </section>
+
+        <p className="business-contact">
+          Contact us -{' '}
+          <a href="mailto:ratemypopup@gmail.com">ratemypopup@gmail.com</a>
+        </p>
       </div>
     </div>
   )

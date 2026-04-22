@@ -293,7 +293,7 @@ export default function ReviewPage() {
       e.queue = 'Rate the queue speed.'
     }
     if (goodieQuality < 1) {
-      e.goodie = 'Rate goodie bag quality.'
+      e.goodie = 'Rate item obtained quality.'
     }
     if (visitMain.size === 0) {
       e.visitMain = 'Select at least one main reason for visiting.'
@@ -643,7 +643,7 @@ export default function ReviewPage() {
             />
             <StarRating
               id="rating-goodie"
-              label="Goodie Bag Quality"
+              label="Item Obtained Quality"
               value={goodieQuality}
               onChange={(v) => {
                 setGoodieQuality(v)
