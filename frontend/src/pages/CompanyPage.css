@@ -31,10 +31,32 @@
   gap: 0.7rem;
 }
 
+.company-page__title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
 .company-page__title {
   margin: 0;
   color: #2d2640;
   font-size: clamp(1.6rem, 3vw, 2.2rem);
+}
+
+.company-page__avg {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--gold-star, #e8b923);
+  font-size: 1.05rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.company-page__avg-star {
+  color: var(--gold-star, #e8b923);
 }
 
 .company-page__stats {
@@ -81,38 +103,5 @@
   padding: 1rem 1.05rem;
   display: grid;
   gap: 0.55rem;
-}
-
-.company-review__head {
-  display: grid;
-  gap: 0.15rem;
-}
-
-.company-review__meta {
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: #6b6483;
-  font-size: 0.86rem;
-}
-
-.company-review__scores {
-  margin: 0;
-  color: #2d2640;
-  font-size: 0.92rem;
-  font-weight: 600;
-}
-
-.company-review__comment {
-  margin: 0;
-  color: #3f3755;
-  line-height: 1.55;
-}
-
-.company-review__line {
-  margin: 0;
-  color: #4a435f;
-  font-size: 0.9rem;
-  line-height: 1.45;
+  animation: none;
 }
