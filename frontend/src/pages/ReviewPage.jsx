@@ -477,13 +477,8 @@ export default function ReviewPage() {
             role="status"
             aria-live="polite"
           >
-            <p className="review-success__title">
-              {submittedCount > 1 ? 'Reviews uploaded!' : 'Review uploaded!'}
-            </p>
+            <p className="review-success__title">Review Uploading!</p>
             <p className="review-success__hint">
-              {submittedCount > 1
-                ? `Saved for ${submittedCount} companies. Taking you home…`
-                : 'Taking you home…'}
             </p>
           </div>
         ) : (
