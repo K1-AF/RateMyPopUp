@@ -1,4 +1,6 @@
-import { useCallback, useId, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { fetchLeaderboard } from '../utils/leaderboard.js'
+import { supabase } from '../utils/supabase.js'
 import {
   IconClock,
   IconStarFilled,
@@ -13,140 +15,91 @@ const TABS = [
   { id: 'queue', label: 'Queue', icon: IconClock },
 ]
 
-/** Mock rows — replace with API when backend exists. */
-const ROWS_BY_TAB = {
-  best: [
-    {
-      rank: 1,
-      title: 'Glossier You Pop-Up',
-      category: 'Beauty',
-      reviews: 342,
-      rating: 4.9,
-    },
-    {
-      rank: 2,
-      title: 'Nike SNKRS Experience',
-      category: 'Fashion',
-      reviews: 289,
-      rating: 4.8,
-    },
-    {
-      rank: 3,
-      title: 'Aperol Spritz Terrace',
-      category: 'Food & Drink',
-      reviews: 201,
-      rating: 4.7,
-    },
-    {
-      rank: 4,
-      title: 'Dyson Supersonic Studio',
-      category: 'Beauty',
-      reviews: 178,
-      rating: 4.6,
-    },
-    {
-      rank: 5,
-      title: 'Lego Immersive World',
-      category: 'Immersive',
-      reviews: 156,
-      rating: 4.5,
-    },
-  ],
-  worst: [
-    {
-      rank: 1,
-      title: 'Sample Kiosk Alpha',
-      category: 'Beauty',
-      reviews: 45,
-      rating: 2.4,
-    },
-    {
-      rank: 2,
-      title: 'Flash Sale Booth',
-      category: 'Fashion',
-      reviews: 62,
-      rating: 2.6,
-    },
-    {
-      rank: 3,
-      title: 'Street Pop-Up Cart',
-      category: 'Food & Drink',
-      reviews: 128,
-      rating: 2.9,
-    },
-    {
-      rank: 4,
-      title: 'VR Demo Tent',
-      category: 'Immersive',
-      reviews: 91,
-      rating: 3.1,
-    },
-    {
-      rank: 5,
-      title: 'Mini Boutique',
-      category: 'Fashion',
-      reviews: 73,
-      rating: 3.3,
-    },
-  ],
-  queue: [
-    {
-      rank: 1,
-      title: 'Aperol Spritz Terrace',
-      category: 'Food & Drink',
-      reviews: 201,
-      rating: 4.7,
-    },
-    {
-      rank: 2,
-      title: 'Glossier You Pop-Up',
-      category: 'Beauty',
-      reviews: 342,
-      rating: 4.9,
-    },
-    {
-      rank: 3,
-      title: 'Lego Immersive World',
-      category: 'Immersive',
-      reviews: 156,
-      rating: 4.5,
-    },
-    {
-      rank: 4,
-      title: 'Nike SNKRS Experience',
-      category: 'Fashion',
-      reviews: 289,
-      rating: 4.8,
-    },
-    {
-      rank: 5,
-      title: 'Dyson Supersonic Studio',
-      category: 'Beauty',
-      reviews: 178,
-      rating: 4.6,
-    },
-  ],
-}
-
 function rankBadgeClass(rank) {
   if (rank === 1) return 'leaderboard-rank--first'
   if (rank === 3) return 'leaderboard-rank--third'
   return 'leaderboard-rank--muted'
 }
 
+/** Which score column a given tab showcases in the star on the right. */
+function primaryScore(tab, row) {
+  if (tab === 'queue') return Number(row.avg_queue_speed ?? 0)
+  return Number(row.avg_overall ?? 0)
+}
+
 /**
- * Home leaderboards: Best / Worst / Queue (mock data until API is wired).
+ * Home leaderboards: Best / Worst / Queue — driven by the
+ * `company_leaderboard` view and auto-refreshed via Realtime on `review`.
  */
 export function LeaderboardSection() {
   const [tab, setTab] = useState('best')
+  const [rowsByTab, setRowsByTab] = useState({ best: [], worst: [], queue: [] })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const mountedRef = useRef(true)
+
   const tabId = useId()
   const panelId = `${tabId}-panel`
 
-  const onSelectTab = useCallback((id) => {
-    setTab(id)
+  /**
+   * Pull all three lists in parallel. We refresh the whole set — not just
+   * the active tab — because Realtime fires once and the user may flip tabs
+   * before the next INSERT arrives.
+   */
+  const refresh = useCallback(async () => {
+    setError('')
+    try {
+      const [best, worst, queue] = await Promise.all([
+        fetchLeaderboard('best', 5),
+        fetchLeaderboard('worst', 5),
+        fetchLeaderboard('queue', 5),
+      ])
+      if (!mountedRef.current) return
+      setRowsByTab({ best, worst, queue })
+    } catch (err) {
+      if (!mountedRef.current) return
+      setError(err?.message || 'Could not load leaderboard')
+    } finally {
+      if (mountedRef.current) setLoading(false)
+    }
   }, [])
 
-  const rows = ROWS_BY_TAB[tab] ?? ROWS_BY_TAB.best
+  useEffect(() => {
+    mountedRef.current = true
+    refresh()
+
+    /*
+     * Realtime: any insert / update / delete on `public.review` triggers a
+     * refresh. We debounce to avoid a storm if many reviews land at once.
+     */
+    let debounceId = null
+    const scheduleRefresh = () => {
+      if (debounceId) window.clearTimeout(debounceId)
+      debounceId = window.setTimeout(() => {
+        refresh()
+      }, 400)
+    }
+
+    const channel = supabase
+      .channel('public:review:leaderboard')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'review' },
+        scheduleRefresh
+      )
+      .subscribe()
+
+    return () => {
+      mountedRef.current = false
+      if (debounceId) window.clearTimeout(debounceId)
+      supabase.removeChannel(channel)
+    }
+  }, [refresh])
+
+  const onSelectTab = useCallback((id) => setTab(id), [])
+
+  const rows = rowsByTab[tab] ?? []
+  const showEmpty = !loading && rows.length === 0 && !error
 
   return (
     <section
@@ -195,27 +148,56 @@ export function LeaderboardSection() {
           className="leaderboard-list"
           role="tabpanel"
           aria-labelledby={`${tabId}-tab-${tab}`}
+          aria-busy={loading}
         >
-          {rows.map((row) => (
-            <li key={`${tab}-${row.rank}-${row.title}`} className="leaderboard-card">
-              <div
-                className={`leaderboard-rank ${rankBadgeClass(row.rank)}`}
-                aria-label={`Rank ${row.rank}`}
-              >
-                {row.rank}
-              </div>
-              <div className="leaderboard-card__main">
-                <p className="leaderboard-card__title">{row.title}</p>
-                <p className="leaderboard-card__meta">
-                  {row.category} · {row.reviews.toLocaleString()} reviews
-                </p>
-              </div>
-              <div className="leaderboard-card__score" title={`${row.rating} out of 5`}>
-                <IconStarFilled className="leaderboard-card__star" ariaHidden />
-                <span className="leaderboard-card__rating">{row.rating.toFixed(1)}</span>
-              </div>
+          {error ? (
+            <li className="leaderboard-card leaderboard-card--state" role="alert">
+              {error}
             </li>
-          ))}
+          ) : loading ? (
+            <li className="leaderboard-card leaderboard-card--state">Loading…</li>
+          ) : showEmpty ? (
+            <li className="leaderboard-card leaderboard-card--state">
+              No reviews yet — be the first to rate a pop-up.
+            </li>
+          ) : (
+            rows.map((row, index) => {
+              const rank = index + 1
+              const score = primaryScore(tab, row)
+              return (
+                <li
+                  key={`${tab}-${row.company_id}`}
+                  className="leaderboard-card"
+                >
+                  <div
+                    className={`leaderboard-rank ${rankBadgeClass(rank)}`}
+                    aria-label={`Rank ${rank}`}
+                  >
+                    {rank}
+                  </div>
+                  <div className="leaderboard-card__main">
+                    <p className="leaderboard-card__title">{row.company_name}</p>
+                    <p className="leaderboard-card__meta">
+                      {Number(row.review_count).toLocaleString()}{' '}
+                      {row.review_count === 1 ? 'review' : 'reviews'}
+                    </p>
+                  </div>
+                  <div
+                    className="leaderboard-card__score"
+                    title={`${score.toFixed(1)} out of 5`}
+                  >
+                    <IconStarFilled
+                      className="leaderboard-card__star"
+                      ariaHidden
+                    />
+                    <span className="leaderboard-card__rating">
+                      {score.toFixed(1)}
+                    </span>
+                  </div>
+                </li>
+              )
+            })
+          )}
         </ul>
       </div>
     </section>

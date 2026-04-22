@@ -69,6 +69,9 @@
   justify-self: end;
   /* Wide enough that nav links stay on one row (with .nav-list flex-wrap: nowrap) */
   min-width: min-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .brand {

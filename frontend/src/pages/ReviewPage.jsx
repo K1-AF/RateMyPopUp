@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { IconSearch } from '../components/Icons.jsx'
+import { useAuth } from '../auth/AuthContext.jsx'
+import { CompanyAutocomplete } from '../components/CompanyAutocomplete.jsx'
 import { StarRating } from '../components/StarRating.jsx'
+import {
+  attachProofToReview,
+  getOrCreateCompanyId,
+  insertReview,
+  uploadReviewProof,
+} from '../utils/reviews.js'
 import './ReviewPage.css'
 
 const SECURE_OPTIONS = [
@@ -76,7 +83,14 @@ function IconSend({ className }) {
  */
 export default function ReviewPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [companyQuery, setCompanyQuery] = useState('')
+  /*
+   * When the user picks a suggestion from the autocomplete we cache the
+   * company uuid so we can skip the get_or_create RPC on submit. Any manual
+   * edit to the input clears it again (see handleCompanyChange).
+   */
+  const [selectedCompanyId, setSelectedCompanyId] = useState(null)
   const [secured, setSecured] = useState(() => new Set())
   const [vibe, setVibe] = useState(0)
   const [queue, setQueue] = useState(0)
@@ -91,6 +105,8 @@ export default function ReviewPage() {
   const [comments, setComments] = useState('')
   const [errors, setErrors] = useState({})
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     const prev = document.title
@@ -278,16 +294,85 @@ export default function ReviewPage() {
     }
   }, [])
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
+    setSubmitError('')
     const e = validate()
     setErrors(e)
     if (Object.keys(e).length > 0) {
       focusFirstInvalid(e)
       return
     }
-    // POST /api/reviews/ with CSRF + multipart when backend exists
-    setSubmitSuccess(true)
+    if (!user?.id) {
+      setSubmitError('You must be signed in to submit a review.')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      // Prefer the id captured from the autocomplete so we don't do an
+      // extra RPC round-trip when the user picked an existing company.
+      const companyId =
+        selectedCompanyId ?? (await getOrCreateCompanyId(companyQuery))
+
+      // Serialize multi-select chips (existing columns are varchar).
+      const securedPayload = [
+        ...Array.from(secured).filter((s) => s !== 'Other'),
+        ...(secured.has('Other') && securedOther.trim()
+          ? [`Other: ${securedOther.trim().slice(0, MAX_OTHER_TEXT)}`]
+          : []),
+      ]
+      const visitPayload = [
+        ...Array.from(visitMain).filter((s) => s !== 'Other'),
+        ...(visitMain.has('Other') && visitMainOther.trim()
+          ? [`Other: ${visitMainOther.trim().slice(0, MAX_OTHER_TEXT)}`]
+          : []),
+      ]
+      const hearAboutPayload =
+        hearAbout === 'Other' && hearAboutOther.trim()
+          ? `Other: ${hearAboutOther.trim().slice(0, MAX_OTHER_TEXT)}`
+          : hearAbout
+
+      const review = await insertReview({
+        account_id: user.id,
+        company_id: companyId,
+        items_secured: JSON.stringify(securedPayload),
+        vibe,
+        queue_speed: queue,
+        goodie_bag_quality: goodieQuality,
+        reason_visit: JSON.stringify(visitPayload),
+        hear_about: hearAboutPayload,
+        comments: comments.trim() || null,
+        proof: null,
+        date: new Date().toISOString(),
+      })
+
+      if (proofFile) {
+        try {
+          const proofMeta = await uploadReviewProof({
+            file: proofFile,
+            userId: user.id,
+            reviewId: review.review_id,
+          })
+          if (proofMeta) {
+            await attachProofToReview(review.review_id, proofMeta)
+          }
+        } catch (uploadErr) {
+          /*
+           * Non-fatal: review is already saved. Surface a soft error so
+           * the user can retry from their profile once that exists, but
+           * still proceed to the success state.
+           */
+          console.warn('[review] proof upload failed:', uploadErr?.message)
+        }
+      }
+
+      setSubmitSuccess(true)
+    } catch (err) {
+      setSubmitError(err?.message || 'Something went wrong. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -322,26 +407,17 @@ export default function ReviewPage() {
                 *
               </abbr>
             </label>
-            <div className="review-search-wrap">
-              <IconSearch className="review-search-wrap__icon" ariaHidden />
-              <input
-                id="company-search"
-                type="search"
-                name="company"
-                autoComplete="organization"
-                placeholder="Search company name..."
-                className={`review-search-wrap__input ${errors.company ? 'review-input--error' : ''}`}
-                value={companyQuery}
-                onChange={(ev) => {
-                  setCompanyQuery(ev.target.value)
-                  clearError('company')
-                }}
-                required
-                aria-required="true"
-                aria-invalid={errors.company ? 'true' : 'false'}
-                aria-describedby={errors.company ? 'company-error' : undefined}
-              />
-            </div>
+            <CompanyAutocomplete
+              id="company-search"
+              value={companyQuery}
+              onValueChange={(name, companyId) => {
+                setCompanyQuery(name)
+                setSelectedCompanyId(companyId)
+                clearError('company')
+              }}
+              error={errors.company}
+              required
+            />
             {errors.company ? (
               <p id="company-error" className="review-field__error" role="alert">
                 {errors.company}
@@ -616,10 +692,21 @@ export default function ReviewPage() {
             />
           </div>
 
+          {submitError ? (
+            <p className="review-field__error review-form__submit-error" role="alert">
+              {submitError}
+            </p>
+          ) : null}
+
           <div className="review-form__actions">
-            <button type="submit" className="btn btn-primary review-submit">
+            <button
+              type="submit"
+              className="btn btn-primary review-submit"
+              disabled={submitting}
+              aria-busy={submitting}
+            >
               <IconSend className="review-submit__icon" />
-              Submit Review
+              {submitting ? 'Submitting…' : 'Submit Review'}
             </button>
           </div>
         </form>

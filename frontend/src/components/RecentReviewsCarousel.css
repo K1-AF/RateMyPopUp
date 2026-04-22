@@ -1,0 +1,253 @@
+/* --- Recent reviews carousel --- */
+
+.recent-reviews {
+  width: 100%;
+  padding: 3rem 1.5rem 1rem;
+}
+
+.recent-reviews__container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.recent-reviews__header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.recent-reviews__sub {
+  margin: 0.4rem 0 0;
+  color: #6b6483;
+  font-size: 0.95rem;
+}
+
+.recent-reviews__viewport {
+  position: relative;
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid rgba(124, 58, 237, 0.12);
+  box-shadow: 0 16px 44px rgba(124, 58, 237, 0.1);
+  padding: 1.5rem 1.5rem 1.25rem;
+  min-height: 18rem;
+  overflow: hidden;
+}
+
+/* Fade-in each new slide (remount via key triggers this) */
+.recent-review {
+  animation: recentReviewFade 350ms ease both;
+}
+
+@keyframes recentReviewFade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.recent-review__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.recent-review__company {
+  margin: 0;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #2d2640;
+  letter-spacing: -0.01em;
+}
+
+.recent-review__meta {
+  margin: 0.25rem 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  color: #6b6483;
+  font-size: 0.86rem;
+}
+
+.recent-review__dot {
+  opacity: 0.5;
+}
+
+.recent-review__chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.65rem;
+  background: rgba(236, 72, 153, 0.1);
+  color: #be185d;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.recent-review__chip--source {
+  background: rgba(124, 58, 237, 0.1);
+  color: #6d28d9;
+}
+
+.recent-review__chip--soft {
+  background: rgba(234, 179, 8, 0.14);
+  color: #92400e;
+}
+
+.recent-review__ratings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.6rem 1.25rem;
+  padding: 0.9rem 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 0.9rem;
+}
+
+.recent-review__stars {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: #2d2640;
+}
+
+.recent-review__stars-label {
+  font-weight: 600;
+  min-width: 5rem;
+}
+
+.recent-review__stars-row {
+  display: inline-flex;
+  gap: 0.15rem;
+}
+
+.recent-review__stars-value {
+  color: #6b6483;
+  font-weight: 500;
+  font-size: 0.82rem;
+}
+
+.recent-review__comments {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #3d3654;
+  font-style: italic;
+}
+
+.recent-review__chips-group {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+
+.recent-review__chips-label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b6483;
+}
+
+.recent-review__chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* Controls */
+
+.recent-reviews__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.recent-reviews__nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  background: #ffffff;
+  color: #6d28d9;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.recent-reviews__nav:hover {
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.recent-reviews__nav:active {
+  transform: translateY(1px);
+}
+
+.recent-reviews__nav:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}
+
+.recent-reviews__dots {
+  display: inline-flex;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(124, 58, 237, 0.07);
+  border-radius: 999px;
+}
+
+.recent-reviews__dot {
+  width: 1.2rem;
+  height: 0.28rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.3);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.recent-reviews__dot:hover {
+  transform: scaleY(1.3);
+}
+
+.recent-reviews__dot.is-active {
+  background: #7c3aed;
+}
+
+.recent-reviews__dot:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .recent-reviews {
+    padding: 2rem 1rem 0.5rem;
+  }
+  .recent-reviews__viewport {
+    padding: 1.15rem 1.1rem 1rem;
+  }
+  .recent-review__company {
+    font-size: 1.05rem;
+  }
+  .recent-review__comments {
+    font-size: 0.95rem;
+  }
+}

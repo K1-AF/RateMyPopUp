@@ -1,5 +1,7 @@
 import { Link, Route, Routes } from 'react-router-dom'
 import bannerLogoImg from './assets/ratemypopup.png'
+import { AuthMenu } from './auth/AuthMenu.jsx'
+import { RequireAuth } from './auth/RequireAuth.jsx'
 import { IconBuilding, IconSearch, IconStarOutline } from './components/Icons.jsx'
 import BusinessPage from './pages/BusinessPage.jsx'
 import HomePage from './pages/HomePage.jsx'
@@ -54,6 +56,7 @@ export default function App() {
                 </li>
               </ul>
             </nav>
+            <AuthMenu />
           </div>
         </div>
       </header>
@@ -61,7 +64,17 @@ export default function App() {
       <main id="main-content">
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/review" element={<ReviewPage />} />
+          <Route
+            path="/review"
+            element={
+              <RequireAuth
+                title="Sign in to write a review"
+                description="We use your Google account to verify reviewers and prevent spam. You'll be returned here once you sign in."
+              >
+                <ReviewPage />
+              </RequireAuth>
+            }
+          />
           <Route path="/business" element={<BusinessPage />} />
         </Routes>
       </main>
