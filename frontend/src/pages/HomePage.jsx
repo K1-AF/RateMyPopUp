@@ -4,6 +4,7 @@ import collageTwoImg from '../assets/collage2.png'
 import homeBannerImg from '../assets/homebanner.png'
 import { IconSearch, IconStarFilled } from '../components/Icons.jsx'
 import { BrowseLiveSections } from '../components/BrowseLiveSections.jsx'
+import { CommunityStats } from '../components/CommunityStats.jsx'
 import { LeaderboardSection } from '../components/LeaderboardSection.jsx'
 import { RecentReviewsCarousel } from '../components/RecentReviewsCarousel.jsx'
 import './HomePage.css'
@@ -265,22 +266,7 @@ export default function HomePage() {
 
       <LeaderboardSection />
 
-      <section id="stats" className="stats" aria-label="Community stats">
-        <div className="stats__inner">
-          <div className="stat">
-            <span className="stat-value text-brand">2,847</span>
-            <span className="stat-label">Reviews</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value text-brand">312</span>
-            <span className="stat-label">Pop-Ups</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value text-brand">18k</span>
-            <span className="stat-label">Users</span>
-          </div>
-        </div>
-      </section>
+      <CommunityStats />
     </div>
   )
 }
