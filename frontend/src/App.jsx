@@ -4,6 +4,8 @@ import { AuthMenu } from './auth/AuthMenu.jsx'
 import { RequireAuth } from './auth/RequireAuth.jsx'
 import { IconBuilding, IconSearch, IconStarOutline } from './components/Icons.jsx'
 import BusinessPage from './pages/BusinessPage.jsx'
+import CompanyPage from './pages/CompanyPage.jsx'
+import ExplorePage from './pages/ExplorePage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import ReviewPage from './pages/ReviewPage.jsx'
 import './App.css'
@@ -34,10 +36,7 @@ export default function App() {
             <nav className="site-nav" aria-label="Primary">
               <ul className="nav-list">
                 <li>
-                  <Link
-                    to={{ pathname: '/', hash: 'section-explore' }}
-                    className="nav-link"
-                  >
+                  <Link to="/explore" className="nav-link">
                     <IconSearch className="nav-icon" />
                     Explore
                   </Link>
@@ -64,6 +63,8 @@ export default function App() {
       <main id="main-content">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/companies/:companyId" element={<CompanyPage />} />
           <Route
             path="/review"
             element={

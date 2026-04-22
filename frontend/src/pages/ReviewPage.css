@@ -175,6 +175,62 @@
   background: #fff;
 }
 
+.review-company-input-row {
+  display: block;
+}
+
+.review-company-hint {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.review-company-list {
+  margin: 0.65rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.review-company-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.review-company-chip {
+  border: none;
+  background: transparent;
+  color: #2d2640;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.review-company-chip:hover {
+  color: #be185d;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.review-company-chip:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}
+
+.review-company-separator {
+  color: #6b7280;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
 .review-chips {
   display: flex;
   flex-wrap: wrap;

@@ -252,10 +252,10 @@ export default function HomePage() {
               <IconStarFilled className="btn-icon" ariaHidden />
               Rate a Pop-Up
             </Link>
-            <a href="/#section-explore" className="btn btn-secondary">
+            <Link to="/explore" className="btn btn-secondary">
               <IconSearch className="btn-icon" ariaHidden />
               Explore
-            </a>
+            </Link>
           </div>
         </div>
       </section>

@@ -1,0 +1,107 @@
+.company-page {
+  width: 100%;
+  padding: 1.5rem 1.25rem 2.5rem;
+}
+
+.company-page__inner {
+  max-width: 860px;
+  margin: 0 auto;
+  display: grid;
+  gap: 1rem;
+}
+
+.company-page__back {
+  color: #5c5568;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.company-page__back:hover {
+  color: #7c3aed;
+}
+
+.company-page__back:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.company-page__header {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.company-page__title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.company-page__title {
+  margin: 0;
+  color: #2d2640;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+}
+
+.company-page__avg {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--gold-star, #e8b923);
+  font-size: 1.05rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.company-page__avg-star {
+  color: var(--gold-star, #e8b923);
+}
+
+.company-page__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.company-page__stat {
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.85rem;
+  color: #4a435f;
+  background: #fff;
+}
+
+.company-page__state {
+  margin: 0;
+  color: #5c5568;
+  border: 1px solid rgba(92, 85, 104, 0.18);
+  border-radius: 12px;
+  padding: 0.95rem 1rem;
+  background: #fff;
+}
+
+.company-page__state--error {
+  color: #b42318;
+  border-color: rgba(180, 35, 24, 0.28);
+}
+
+.company-reviews {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.company-review {
+  border: 1px solid rgba(92, 85, 104, 0.2);
+  border-radius: 12px;
+  background: #fff;
+  padding: 1rem 1.05rem;
+  display: grid;
+  gap: 0.55rem;
+  animation: none;
+}

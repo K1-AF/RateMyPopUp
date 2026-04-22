@@ -151,6 +151,60 @@ function adaptRow(row) {
   }
 }
 
+/**
+ * Collab submissions are stored as one review per company_id (same payload).
+ * For home feed UX we collapse those sibling rows into one card and combine
+ * names like "Nars x Refy" while preserving the newest-first ordering.
+ */
+function collapseCollaborativeRows(rows) {
+  const grouped = new Map()
+  const order = []
+
+  for (const row of rows ?? []) {
+    const key = [
+      row.account_id ?? '',
+      row.date ?? '',
+      row.vibe ?? '',
+      row.queue_speed ?? '',
+      row.goodie_bag_quality ?? '',
+      row.items_secured ?? '',
+      row.reason_visit ?? '',
+      row.hear_about ?? '',
+      row.comments ?? '',
+    ].join('|')
+
+    const companyName = row.company?.company_name
+      ? String(row.company.company_name).trim()
+      : ''
+
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        ...row,
+        _companies: companyName ? [companyName] : [],
+      })
+      order.push(key)
+      continue
+    }
+
+    const bucket = grouped.get(key)
+    if (companyName && !bucket._companies.includes(companyName)) {
+      bucket._companies.push(companyName)
+    }
+  }
+
+  return order.map((key) => {
+    const row = grouped.get(key)
+    const names = [...(row._companies ?? [])].sort((a, b) =>
+      a.localeCompare(b)
+    )
+    const combinedName = names.length > 0 ? names.join(' x ') : row.company?.company_name
+    return {
+      ...row,
+      company: { ...(row.company ?? {}), company_name: combinedName || 'Unknown pop-up' },
+    }
+  })
+}
+
 export function RecentReviewsCarousel() {
   const seed = useMemo(
     () =>
@@ -167,11 +221,12 @@ export function RecentReviewsCarousel() {
 
   useEffect(() => {
     let cancelled = false
-    fetchRecentReviews(10)
+    fetchRecentReviews(30)
       .then((rows) => {
         if (cancelled) return
         if (!rows || rows.length === 0) return // keep seed fallback
-        const mapped = rows.map(adaptRow)
+        const collapsed = collapseCollaborativeRows(rows).slice(0, 10)
+        const mapped = collapsed.map(adaptRow)
         setReviews(mapped)
         setActive(0)
       })
