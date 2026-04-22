@@ -36,6 +36,8 @@ const HEAR_ABOUT_OPTIONS = [
 const MAX_PROOF_BYTES = 5 * 1024 * 1024
 /** Max length for "Other" free-text fields (limits abuse / oversized payloads). */
 const MAX_OTHER_TEXT = 200
+/** Hard cap to avoid accidental spammy multi-company submissions. */
+const MAX_COLLAB_COMPANIES = 6
 /** Time to show success copy before redirecting home (ms). */
 const SUCCESS_REDIRECT_MS = 2000
 
@@ -94,13 +96,8 @@ export default function ReviewPage() {
     const raw = params.get('companyId')
     return raw && raw.length <= 64 ? raw : null
   }, [location.search])
-  const [companyQuery, setCompanyQuery] = useState(initialCompanyQuery)
-  /*
-   * When the user picks a suggestion from the autocomplete we cache the
-   * company uuid so we can skip the get_or_create RPC on submit. Any manual
-   * edit to the input clears it again (see handleCompanyChange).
-   */
-  const [selectedCompanyId, setSelectedCompanyId] = useState(initialCompanyId)
+  const [companyQuery, setCompanyQuery] = useState('')
+  const [selectedCompanies, setSelectedCompanies] = useState([])
   const [secured, setSecured] = useState(() => new Set())
   const [vibe, setVibe] = useState(0)
   const [queue, setQueue] = useState(0)
@@ -115,6 +112,7 @@ export default function ReviewPage() {
   const [comments, setComments] = useState('')
   const [errors, setErrors] = useState({})
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [submittedCount, setSubmittedCount] = useState(1)
   const [submitError, setSubmitError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -127,9 +125,72 @@ export default function ReviewPage() {
   }, [])
 
   useEffect(() => {
-    setCompanyQuery(initialCompanyQuery)
-    setSelectedCompanyId(initialCompanyId)
+    const next = []
+    if (initialCompanyQuery.trim()) {
+      next.push({
+        id: initialCompanyId,
+        name: initialCompanyQuery.trim().slice(0, 120),
+      })
+    }
+    setSelectedCompanies(next)
+    setCompanyQuery('')
   }, [initialCompanyId, initialCompanyQuery])
+
+  const clearError = useCallback((key) => {
+    setErrors((prev) => {
+      if (!prev[key]) return prev
+      const next = { ...prev }
+      delete next[key]
+      return next
+    })
+  }, [])
+
+  const companiesToSubmit = useMemo(() => {
+    const out = []
+    const seen = new Set()
+
+    for (const item of selectedCompanies) {
+      const name = String(item?.name ?? '').trim()
+      if (!name) continue
+      const key = item?.id ? `id:${item.id}` : `name:${name.toLowerCase()}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      out.push({ id: item?.id ?? null, name })
+    }
+
+    const trailing = companyQuery.trim()
+    if (trailing) {
+      const key = `name:${trailing.toLowerCase()}`
+      if (!seen.has(key)) {
+        out.push({ id: null, name: trailing })
+      }
+    }
+
+    return out.slice(0, MAX_COLLAB_COMPANIES)
+  }, [companyQuery, selectedCompanies])
+
+  const addSelectedCompany = useCallback((name, companyId = null) => {
+    const trimmed = String(name ?? '').trim()
+    if (!trimmed) return
+
+    setSelectedCompanies((prev) => {
+      const deduped = prev.filter((item) => {
+        if (companyId && item.id && item.id === companyId) return false
+        return item.name.toLowerCase() !== trimmed.toLowerCase()
+      })
+
+      return [...deduped, { id: companyId, name: trimmed }].slice(
+        0,
+        MAX_COLLAB_COMPANIES
+      )
+    })
+    setCompanyQuery('')
+    clearError('company')
+  }, [clearError])
+
+  const removeSelectedCompany = useCallback((idx) => {
+    setSelectedCompanies((prev) => prev.filter((_, i) => i !== idx))
+  }, [])
 
   useEffect(() => {
     if (!submitSuccess) return
@@ -143,15 +204,6 @@ export default function ReviewPage() {
     }, SUCCESS_REDIRECT_MS)
     return () => window.clearTimeout(id)
   }, [submitSuccess, navigate])
-
-  const clearError = useCallback((key) => {
-    setErrors((prev) => {
-      if (!prev[key]) return prev
-      const next = { ...prev }
-      delete next[key]
-      return next
-    })
-  }, [])
 
   const toggleChip = useCallback((label) => {
     let togglingOffOther = false
@@ -226,8 +278,8 @@ export default function ReviewPage() {
 
   const validate = useCallback(() => {
     const e = {}
-    if (!companyQuery.trim()) {
-      e.company = 'Enter the company or event name.'
+    if (companiesToSubmit.length === 0) {
+      e.company = 'Add at least one company for this review.'
     }
     if (secured.size === 0) {
       e.secured = 'Select at least one option for what you secured.'
@@ -255,7 +307,7 @@ export default function ReviewPage() {
     }
     return e
   }, [
-    companyQuery,
+    companiesToSubmit,
     secured,
     securedOther,
     vibe,
@@ -325,10 +377,17 @@ export default function ReviewPage() {
 
     setSubmitting(true)
     try {
-      // Prefer the id captured from the autocomplete so we don't do an
-      // extra RPC round-trip when the user picked an existing company.
-      const companyId =
-        selectedCompanyId ?? (await getOrCreateCompanyId(companyQuery))
+      // Resolve every selected collaborator to a canonical company uuid.
+      const resolvedCompanyIds = []
+      for (const company of companiesToSubmit) {
+        const companyId = company.id ?? (await getOrCreateCompanyId(company.name))
+        if (!resolvedCompanyIds.includes(companyId)) {
+          resolvedCompanyIds.push(companyId)
+        }
+      }
+      if (resolvedCompanyIds.length === 0) {
+        throw new Error('Please add at least one company before submitting.')
+      }
 
       // Serialize multi-select chips (existing columns are varchar).
       const securedPayload = [
@@ -348,40 +407,45 @@ export default function ReviewPage() {
           ? `Other: ${hearAboutOther.trim().slice(0, MAX_OTHER_TEXT)}`
           : hearAbout
 
-      const review = await insertReview({
-        account_id: user.id,
-        company_id: companyId,
-        items_secured: JSON.stringify(securedPayload),
-        vibe,
-        queue_speed: queue,
-        goodie_bag_quality: goodieQuality,
-        reason_visit: JSON.stringify(visitPayload),
-        hear_about: hearAboutPayload,
-        comments: comments.trim() || null,
-        proof: null,
-        date: new Date().toISOString(),
-      })
+      let createdCount = 0
+      for (const companyId of resolvedCompanyIds) {
+        const review = await insertReview({
+          account_id: user.id,
+          company_id: companyId,
+          items_secured: JSON.stringify(securedPayload),
+          vibe,
+          queue_speed: queue,
+          goodie_bag_quality: goodieQuality,
+          reason_visit: JSON.stringify(visitPayload),
+          hear_about: hearAboutPayload,
+          comments: comments.trim() || null,
+          proof: null,
+          date: new Date().toISOString(),
+        })
+        createdCount += 1
 
-      if (proofFile) {
-        try {
-          const proofMeta = await uploadReviewProof({
-            file: proofFile,
-            userId: user.id,
-            reviewId: review.review_id,
-          })
-          if (proofMeta) {
-            await attachProofToReview(review.review_id, proofMeta)
+        if (proofFile) {
+          try {
+            const proofMeta = await uploadReviewProof({
+              file: proofFile,
+              userId: user.id,
+              reviewId: review.review_id,
+            })
+            if (proofMeta) {
+              await attachProofToReview(review.review_id, proofMeta)
+            }
+          } catch (uploadErr) {
+            /*
+             * Non-fatal: review is already saved. Surface a soft error so
+             * the user can retry from their profile once that exists, but
+             * still proceed to the success state.
+             */
+            console.warn('[review] proof upload failed:', uploadErr?.message)
           }
-        } catch (uploadErr) {
-          /*
-           * Non-fatal: review is already saved. Surface a soft error so
-           * the user can retry from their profile once that exists, but
-           * still proceed to the success state.
-           */
-          console.warn('[review] proof upload failed:', uploadErr?.message)
         }
       }
 
+      setSubmittedCount(createdCount)
       setSubmitSuccess(true)
     } catch (err) {
       setSubmitError(err?.message || 'Something went wrong. Please try again.')
@@ -410,29 +474,82 @@ export default function ReviewPage() {
             role="status"
             aria-live="polite"
           >
-            <p className="review-success__title">Review uploaded!</p>
-            <p className="review-success__hint">Taking you home…</p>
+            <p className="review-success__title">
+              {submittedCount > 1 ? 'Reviews uploaded!' : 'Review uploaded!'}
+            </p>
+            <p className="review-success__hint">
+              {submittedCount > 1
+                ? `Saved for ${submittedCount} companies. Taking you home…`
+                : 'Taking you home…'}
+            </p>
           </div>
         ) : (
         <form className="review-form" onSubmit={handleSubmit} noValidate>
           <div className="review-field">
             <label className="review-field__label" htmlFor="company-search">
-              Company {' '}
+              Company(ies){' '}
               <abbr className="review-required" title="required">
                 *
               </abbr>
             </label>
-            <CompanyAutocomplete
-              id="company-search"
-              value={companyQuery}
-              onValueChange={(name, companyId) => {
-                setCompanyQuery(name)
-                setSelectedCompanyId(companyId)
-                clearError('company')
+            <div
+              className="review-company-input-row"
+              onKeyDown={(event) => {
+                const target = event.target
+                if (
+                  event.key !== 'Enter' ||
+                  event.defaultPrevented ||
+                  !(target instanceof HTMLElement) ||
+                  target.id !== 'company-search'
+                ) {
+                  return
+                }
+                event.preventDefault()
+                addSelectedCompany(companyQuery, null)
               }}
-              error={errors.company}
-              required
-            />
+            >
+              <CompanyAutocomplete
+                id="company-search"
+                value={companyQuery}
+                onValueChange={(name, companyId) => {
+                  if (companyId) {
+                    addSelectedCompany(name, companyId)
+                    return
+                  }
+                  setCompanyQuery(name)
+                  clearError('company')
+                }}
+                error={errors.company}
+                required
+              />
+            </div>
+            <p className="review-company-hint">
+              Press Enter after typing, or pick an existing company. Remove by clicking.
+            </p>
+            {selectedCompanies.length > 0 ? (
+              <ul className="review-company-list" aria-label="Selected companies">
+                {selectedCompanies.map((item, index) => (
+                  <li
+                    key={`${item.id ?? item.name}-${index}`}
+                    className="review-company-item"
+                  >
+                    <button
+                      type="button"
+                      className="review-company-chip"
+                      onClick={() => removeSelectedCompany(index)}
+                      aria-label={`Remove ${item.name}`}
+                    >
+                      <span>{item.name}</span>
+                    </button>
+                    {index < selectedCompanies.length - 1 ? (
+                      <span className="review-company-separator" aria-hidden>
+                        x
+                      </span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             {errors.company ? (
               <p id="company-error" className="review-field__error" role="alert">
                 {errors.company}
