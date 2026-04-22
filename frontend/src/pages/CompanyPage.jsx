@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { IconStarFilled } from '../components/Icons.jsx'
 import {
   fetchCompanyById,
+  fetchReviewsByDates,
   fetchReviewsForCompany,
   parseMultiField,
 } from '../utils/reviews.js'
@@ -21,6 +22,20 @@ function formatDate(iso) {
   }
 }
 
+function reviewSignature(row) {
+  return [
+    row.account_id ?? '',
+    row.date ?? '',
+    row.vibe ?? '',
+    row.queue_speed ?? '',
+    row.goodie_bag_quality ?? '',
+    row.items_secured ?? '',
+    row.reason_visit ?? '',
+    row.hear_about ?? '',
+    row.comments ?? '',
+  ].join('|')
+}
+
 export default function CompanyPage() {
   const { companyId = '' } = useParams()
   const [company, setCompany] = useState(null)
@@ -34,10 +49,38 @@ export default function CompanyPage() {
     setError('')
 
     Promise.all([fetchCompanyById(companyId), fetchReviewsForCompany(companyId, 60)])
-      .then(([companyRow, reviewRows]) => {
+      .then(async ([companyRow, reviewRows]) => {
         if (cancelled) return
+        const dates = [...new Set((reviewRows ?? []).map((row) => row.date).filter(Boolean))]
+        let siblingRows = []
+        if (dates.length > 0) {
+          try {
+            siblingRows = await fetchReviewsByDates(dates, 800)
+          } catch (err) {
+            console.warn('[company] failed to fetch sibling reviews:', err?.message)
+          }
+        }
+
+        const namesBySignature = new Map()
+        for (const row of siblingRows) {
+          const key = reviewSignature(row)
+          if (!namesBySignature.has(key)) namesBySignature.set(key, new Set())
+          const name = row.company?.company_name ? String(row.company.company_name).trim() : ''
+          if (name) namesBySignature.get(key).add(name)
+        }
+
+        const enriched = reviewRows.map((row) => {
+          const key = reviewSignature(row)
+          const names = [...(namesBySignature.get(key) ?? [])].sort((a, b) =>
+            a.localeCompare(b)
+          )
+          const collabCompanyName =
+            names.length > 0 ? names.join(' x ') : companyRow.company_name
+          return { ...row, collabCompanyName }
+        })
+
         setCompany(companyRow)
-        setReviews(reviewRows)
+        setReviews(enriched)
       })
       .catch((err) => {
         if (cancelled) return
@@ -139,7 +182,7 @@ export default function CompanyPage() {
                       <header className="recent-review__head">
                         <div>
                           <p className="recent-review__company">
-                            {company?.company_name || 'Unknown pop-up'}
+                            {row.collabCompanyName || company?.company_name || 'Unknown pop-up'}
                           </p>
                           <p className="recent-review__meta">
                             <span>{row.account?.display_name || 'Anonymous'}</span>

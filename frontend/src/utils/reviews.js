@@ -146,6 +146,42 @@ export async function fetchReviewsForCompany(companyId, limit = 50) {
   return data ?? []
 }
 
+/**
+ * Loads review rows for a set of exact timestamps so collab siblings (same
+ * submission moment) can be grouped into a combined company title.
+ */
+export async function fetchReviewsByDates(dates, limit = 500) {
+  const uniqueDates = Array.isArray(dates)
+    ? [...new Set(dates.map((d) => String(d ?? '').trim()).filter(Boolean))]
+    : []
+  if (uniqueDates.length === 0) return []
+
+  const cappedLimit = Math.max(1, Math.min(1000, Number(limit) || 500))
+  const { data, error } = await supabase
+    .from('review')
+    .select(
+      `
+        review_id,
+        account_id,
+        company_id,
+        vibe,
+        queue_speed,
+        goodie_bag_quality,
+        items_secured,
+        reason_visit,
+        hear_about,
+        comments,
+        date,
+        company:company_id ( company_name )
+      `
+    )
+    .in('date', uniqueDates)
+    .limit(cappedLimit)
+
+  if (error) throw new Error(error.message || 'Failed to load collaborative reviews')
+  return data ?? []
+}
+
 /** Resolves (or creates) a company row by name and returns its uuid. */
 export async function getOrCreateCompanyId(name) {
   const trimmed = (name ?? '').trim()
