@@ -66,6 +66,30 @@ export async function searchCompanies(query, limit = 8) {
   return data ?? []
 }
 
+/**
+ * Fetches companies for the Explore page with optional case-insensitive search.
+ * Input is escaped to prevent wildcard-expansion abuse in ILIKE patterns.
+ */
+export async function fetchCompanies({ query = '', limit = 120 } = {}) {
+  const trimmed = String(query ?? '').trim()
+  const cappedLimit = Math.max(1, Math.min(250, Number(limit) || 120))
+
+  let qb = supabase
+    .from('company')
+    .select('company_id, company_name')
+    .order('company_name', { ascending: true })
+    .limit(cappedLimit)
+
+  if (trimmed.length > 0) {
+    const escaped = escapeIlike(trimmed)
+    qb = qb.ilike('company_name', `%${escaped}%`)
+  }
+
+  const { data, error } = await qb
+  if (error) throw new Error(error.message || 'Failed to load companies')
+  return data ?? []
+}
+
 /** Resolves (or creates) a company row by name and returns its uuid. */
 export async function getOrCreateCompanyId(name) {
   const trimmed = (name ?? '').trim()
