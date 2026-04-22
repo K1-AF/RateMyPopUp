@@ -125,6 +125,8 @@ export async function fetchReviewsForCompany(companyId, limit = 50) {
     .select(
       `
         review_id,
+        account_id,
+        company_id,
         vibe,
         queue_speed,
         goodie_bag_quality,

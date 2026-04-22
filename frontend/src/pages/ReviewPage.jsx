@@ -407,6 +407,9 @@ export default function ReviewPage() {
           ? `Other: ${hearAboutOther.trim().slice(0, MAX_OTHER_TEXT)}`
           : hearAbout
 
+      // Keep one shared timestamp across all collaborator rows so the home
+      // feed can collapse them into a single combined card.
+      const submittedAt = new Date().toISOString()
       let createdCount = 0
       for (const companyId of resolvedCompanyIds) {
         const review = await insertReview({
@@ -420,7 +423,7 @@ export default function ReviewPage() {
           hear_about: hearAboutPayload,
           comments: comments.trim() || null,
           proof: null,
-          date: new Date().toISOString(),
+          date: submittedAt,
         })
         createdCount += 1
 
