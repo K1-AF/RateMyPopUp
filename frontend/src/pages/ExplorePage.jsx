@@ -101,8 +101,13 @@ export default function ExplorePage() {
         {companies.length > 0 ? (
           <ul className="explore-list" aria-label="Company results">
             {companies.map((company) => (
-              <li key={company.company_id} className="explore-card">
-                <p className="explore-card__name">{company.company_name}</p>
+              <li key={company.company_id}>
+                <Link
+                  to={`/review?company=${encodeURIComponent(company.company_name)}&companyId=${encodeURIComponent(company.company_id)}`}
+                  className="explore-card"
+                >
+                  <p className="explore-card__name">{company.company_name}</p>
+                </Link>
               </li>
             ))}
           </ul>

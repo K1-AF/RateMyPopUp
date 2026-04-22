@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext.jsx'
 import { CompanyAutocomplete } from '../components/CompanyAutocomplete.jsx'
 import { StarRating } from '../components/StarRating.jsx'
@@ -83,14 +83,24 @@ function IconSend({ className }) {
  */
 export default function ReviewPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
-  const [companyQuery, setCompanyQuery] = useState('')
+  const initialCompanyQuery = useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    return params.get('company')?.slice(0, 120) ?? ''
+  }, [location.search])
+  const initialCompanyId = useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    const raw = params.get('companyId')
+    return raw && raw.length <= 64 ? raw : null
+  }, [location.search])
+  const [companyQuery, setCompanyQuery] = useState(initialCompanyQuery)
   /*
    * When the user picks a suggestion from the autocomplete we cache the
    * company uuid so we can skip the get_or_create RPC on submit. Any manual
    * edit to the input clears it again (see handleCompanyChange).
    */
-  const [selectedCompanyId, setSelectedCompanyId] = useState(null)
+  const [selectedCompanyId, setSelectedCompanyId] = useState(initialCompanyId)
   const [secured, setSecured] = useState(() => new Set())
   const [vibe, setVibe] = useState(0)
   const [queue, setQueue] = useState(0)
@@ -115,6 +125,11 @@ export default function ReviewPage() {
       document.title = prev
     }
   }, [])
+
+  useEffect(() => {
+    setCompanyQuery(initialCompanyQuery)
+    setSelectedCompanyId(initialCompanyId)
+  }, [initialCompanyId, initialCompanyQuery])
 
   useEffect(() => {
     if (!submitSuccess) return
