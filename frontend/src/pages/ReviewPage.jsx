@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext.jsx'
-import { IconSearch } from '../components/Icons.jsx'
+import { CompanyAutocomplete } from '../components/CompanyAutocomplete.jsx'
 import { StarRating } from '../components/StarRating.jsx'
 import {
   attachProofToReview,
@@ -85,6 +85,12 @@ export default function ReviewPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [companyQuery, setCompanyQuery] = useState('')
+  /*
+   * When the user picks a suggestion from the autocomplete we cache the
+   * company uuid so we can skip the get_or_create RPC on submit. Any manual
+   * edit to the input clears it again (see handleCompanyChange).
+   */
+  const [selectedCompanyId, setSelectedCompanyId] = useState(null)
   const [secured, setSecured] = useState(() => new Set())
   const [vibe, setVibe] = useState(0)
   const [queue, setQueue] = useState(0)
@@ -304,7 +310,10 @@ export default function ReviewPage() {
 
     setSubmitting(true)
     try {
-      const companyId = await getOrCreateCompanyId(companyQuery)
+      // Prefer the id captured from the autocomplete so we don't do an
+      // extra RPC round-trip when the user picked an existing company.
+      const companyId =
+        selectedCompanyId ?? (await getOrCreateCompanyId(companyQuery))
 
       // Serialize multi-select chips (existing columns are varchar).
       const securedPayload = [
@@ -398,26 +407,17 @@ export default function ReviewPage() {
                 *
               </abbr>
             </label>
-            <div className="review-search-wrap">
-              <IconSearch className="review-search-wrap__icon" ariaHidden />
-              <input
-                id="company-search"
-                type="search"
-                name="company"
-                autoComplete="organization"
-                placeholder="Search company name..."
-                className={`review-search-wrap__input ${errors.company ? 'review-input--error' : ''}`}
-                value={companyQuery}
-                onChange={(ev) => {
-                  setCompanyQuery(ev.target.value)
-                  clearError('company')
-                }}
-                required
-                aria-required="true"
-                aria-invalid={errors.company ? 'true' : 'false'}
-                aria-describedby={errors.company ? 'company-error' : undefined}
-              />
-            </div>
+            <CompanyAutocomplete
+              id="company-search"
+              value={companyQuery}
+              onValueChange={(name, companyId) => {
+                setCompanyQuery(name)
+                setSelectedCompanyId(companyId)
+                clearError('company')
+              }}
+              error={errors.company}
+              required
+            />
             {errors.company ? (
               <p id="company-error" className="review-field__error" role="alert">
                 {errors.company}

@@ -39,6 +39,33 @@ export function parseMultiField(raw) {
     .filter(Boolean)
 }
 
+/**
+ * Escapes the % and _ wildcards in a user-supplied substring so PostgREST's
+ * ILIKE matcher treats them as literal characters instead of wildcards.
+ */
+function escapeIlike(value) {
+  return String(value).replace(/\\/g, '\\\\').replace(/([%_])/g, '\\$1')
+}
+
+/**
+ * Typeahead search over companies. Case-insensitive substring match.
+ * Safe to call on every keystroke — we escape wildcards and hard-cap the
+ * returned rows, and RLS limits visibility to what the user can already see.
+ */
+export async function searchCompanies(query, limit = 8) {
+  const trimmed = (query ?? '').trim()
+  if (trimmed.length < 1) return []
+  const escaped = escapeIlike(trimmed)
+  const { data, error } = await supabase
+    .from('company')
+    .select('company_id, company_name')
+    .ilike('company_name', `%${escaped}%`)
+    .order('company_name', { ascending: true })
+    .limit(Math.max(1, Math.min(20, limit)))
+  if (error) throw new Error(error.message || 'Failed to search companies')
+  return data ?? []
+}
+
 /** Resolves (or creates) a company row by name and returns its uuid. */
 export async function getOrCreateCompanyId(name) {
   const trimmed = (name ?? '').trim()

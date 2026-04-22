@@ -1,0 +1,55 @@
+/* --- Company autocomplete dropdown --- */
+
+.company-autocomplete {
+  position: relative;
+}
+
+.company-autocomplete__list {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 14px 36px rgba(45, 38, 64, 0.18);
+  max-height: 18rem;
+  overflow-y: auto;
+}
+
+.company-autocomplete__option {
+  display: flex;
+  align-items: center;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #2d2640;
+  font-size: 0.95rem;
+  transition: background 0.1s ease;
+}
+
+.company-autocomplete__option.is-active {
+  background: rgba(124, 58, 237, 0.08);
+  color: #5b21b6;
+}
+
+.company-autocomplete__option:hover {
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.company-autocomplete__name {
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.company-autocomplete__state {
+  padding: 0.6rem 0.75rem;
+  color: #6b6483;
+  font-size: 0.9rem;
+  font-style: italic;
+  word-break: break-word;
+}
