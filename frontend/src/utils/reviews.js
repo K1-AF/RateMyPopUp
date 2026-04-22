@@ -90,6 +90,60 @@ export async function fetchCompanies({ query = '', limit = 120 } = {}) {
   return data ?? []
 }
 
+/**
+ * Loads a single company by id for the company detail page.
+ */
+export async function fetchCompanyById(companyId) {
+  const safeCompanyId = String(companyId ?? '').trim()
+  if (!safeCompanyId || safeCompanyId.length > 64) {
+    throw new Error('Invalid company id.')
+  }
+
+  const { data, error } = await supabase
+    .from('company')
+    .select('company_id, company_name')
+    .eq('company_id', safeCompanyId)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message || 'Failed to load company')
+  if (!data) throw new Error('Company not found.')
+  return data
+}
+
+/**
+ * Fetches the newest reviews for one company.
+ */
+export async function fetchReviewsForCompany(companyId, limit = 50) {
+  const safeCompanyId = String(companyId ?? '').trim()
+  const cappedLimit = Math.max(1, Math.min(100, Number(limit) || 50))
+  if (!safeCompanyId || safeCompanyId.length > 64) {
+    throw new Error('Invalid company id.')
+  }
+
+  const { data, error } = await supabase
+    .from('review')
+    .select(
+      `
+        review_id,
+        vibe,
+        queue_speed,
+        goodie_bag_quality,
+        items_secured,
+        reason_visit,
+        hear_about,
+        comments,
+        date,
+        account:account_id ( display_name )
+      `
+    )
+    .eq('company_id', safeCompanyId)
+    .order('date', { ascending: false })
+    .limit(cappedLimit)
+
+  if (error) throw new Error(error.message || 'Failed to load company reviews')
+  return data ?? []
+}
+
 /** Resolves (or creates) a company row by name and returns its uuid. */
 export async function getOrCreateCompanyId(name) {
   const trimmed = (name ?? '').trim()

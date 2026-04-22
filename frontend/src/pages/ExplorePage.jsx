@@ -103,7 +103,7 @@ export default function ExplorePage() {
             {companies.map((company) => (
               <li key={company.company_id}>
                 <Link
-                  to={`/review?company=${encodeURIComponent(company.company_name)}&companyId=${encodeURIComponent(company.company_id)}`}
+                  to={`/companies/${encodeURIComponent(company.company_id)}`}
                   className="explore-card"
                 >
                   <p className="explore-card__name">{company.company_name}</p>

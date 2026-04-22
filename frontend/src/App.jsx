@@ -4,6 +4,7 @@ import { AuthMenu } from './auth/AuthMenu.jsx'
 import { RequireAuth } from './auth/RequireAuth.jsx'
 import { IconBuilding, IconSearch, IconStarOutline } from './components/Icons.jsx'
 import BusinessPage from './pages/BusinessPage.jsx'
+import CompanyPage from './pages/CompanyPage.jsx'
 import ExplorePage from './pages/ExplorePage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import ReviewPage from './pages/ReviewPage.jsx'
@@ -63,6 +64,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/companies/:companyId" element={<CompanyPage />} />
           <Route
             path="/review"
             element={
