@@ -102,6 +102,16 @@
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
 }
 
+.leaderboard-card--state {
+  justify-content: center;
+  color: #6b6483;
+  font-size: 0.92rem;
+  font-style: italic;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: none;
+  border: 1px dashed rgba(124, 58, 237, 0.18);
+}
+
 .leaderboard-rank {
   flex-shrink: 0;
   width: 2.25rem;
