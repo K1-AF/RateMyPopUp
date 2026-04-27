@@ -48,13 +48,31 @@ export default function BusinessPage() {
         </Link>
 
         <header className="business-hero">
-          <div className="business-hero__icon-wrap" aria-hidden>
-            <IconBuilding className="business-hero__icon" ariaHidden />
+          <div className="business-hero__copy">
+            <p className="business-hero__eyebrow">For pop-up operators</p>
+            <h1 className="business-hero__title">Business owner?</h1>
+            <p className="business-hero__lead">
+              Track what attendees loved, where the queue lost momentum, and
+              which freebies actually moved the room.
+            </p>
           </div>
-          <h1 className="business-hero__title">Business owner?</h1>
-          <p className="business-hero__lead">
-            Explore insights into what attendees really think. Improve your pop-up game.
-          </p>
+
+          <div className="business-chart" aria-label="Example pop-up insight chart">
+            <div className="business-chart__header">
+              <span>Attendee Signals</span>
+              <strong>4.7</strong>
+            </div>
+            <div className="business-chart__bars" aria-hidden>
+              <span className="business-chart__bar business-chart__bar--vibe" />
+              <span className="business-chart__bar business-chart__bar--queue" />
+              <span className="business-chart__bar business-chart__bar--goodie" />
+            </div>
+            <div className="business-chart__legend" aria-hidden>
+              <span>Vibe</span>
+              <span>Queue</span>
+              <span>Goodie bag</span>
+            </div>
+          </div>
         </header>
 
         <section className="business-benefits" aria-labelledby="business-benefits-heading">
@@ -81,7 +99,9 @@ export default function BusinessPage() {
 
         <p className="business-contact">
           Contact us -{' '}
-          <a href="mailto:ratemypopup@gmail.com">ratemypopup@gmail.com</a>
+          <a className="business-contact__button" href="mailto:ratemypopup@gmail.com">
+            ratemypopup@gmail.com
+          </a>
         </p>
       </div>
     </div>
