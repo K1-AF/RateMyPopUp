@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   IconBuilding,
   IconChartBars,
-  IconSearch,
   IconStarOutline,
 } from '../components/Icons.jsx'
 import './BusinessPage.css'
@@ -30,11 +29,9 @@ const FEATURES = [
 ]
 
 /**
- * Business landing: claim a company profile and preview insights (search is client-only until API exists).
+ * Business landing: contact + benefits preview.
  */
 export default function BusinessPage() {
-  const [query, setQuery] = useState('')
-
   useEffect(() => {
     const prev = document.title
     document.title = 'For Business — RateMyPopUp'
@@ -42,13 +39,6 @@ export default function BusinessPage() {
       document.title = prev
     }
   }, [])
-
-  const onSearch = useCallback((e) => {
-    e.preventDefault()
-    const q = query.trim()
-    if (!q) return
-    // Placeholder: wire to company search / claim flow when backend is ready
-  }, [query])
 
   return (
     <div className="business-page">
@@ -58,38 +48,32 @@ export default function BusinessPage() {
         </Link>
 
         <header className="business-hero">
-          <div className="business-hero__icon-wrap" aria-hidden>
-            <IconBuilding className="business-hero__icon" ariaHidden />
+          <div className="business-hero__copy">
+            <p className="business-hero__eyebrow">For pop-up operators</p>
+            <h1 className="business-hero__title">Business owner?</h1>
+            <p className="business-hero__lead">
+              Track what attendees loved, where the queue lost momentum, and
+              which freebies actually moved the room.
+            </p>
           </div>
-          <h1 className="business-hero__title">Get Ahead</h1>
-          <p className="business-hero__lead">
-            Explore insights into what attendees really think. Improve your pop-up game.
-          </p>
-        </header>
 
-        <form className="business-search" onSubmit={onSearch} noValidate>
-          <label className="sr-only" htmlFor="business-company-search">
-            Search for your company
-          </label>
-          <div className="business-search__row">
-            <div className="business-search__input-wrap">
-              <IconSearch className="business-search__icon" ariaHidden />
-              <input
-                id="business-company-search"
-                name="company"
-                type="search"
-                className="business-search__input"
-                placeholder="Search your company..."
-                autoComplete="organization"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
+          <div className="business-chart" aria-label="Example pop-up insight chart">
+            <div className="business-chart__header">
+              <span>Attendee Signals</span>
+              <strong>4.7</strong>
             </div>
-            <button type="submit" className="business-search__submit">
-              Search
-            </button>
+            <div className="business-chart__bars" aria-hidden>
+              <span className="business-chart__bar business-chart__bar--vibe" />
+              <span className="business-chart__bar business-chart__bar--queue" />
+              <span className="business-chart__bar business-chart__bar--goodie" />
+            </div>
+            <div className="business-chart__legend" aria-hidden>
+              <span>Vibe</span>
+              <span>Queue</span>
+              <span>Goodie bag</span>
+            </div>
           </div>
-        </form>
+        </header>
 
         <section className="business-benefits" aria-labelledby="business-benefits-heading">
           <h2 id="business-benefits-heading" className="business-benefits__title">
@@ -112,6 +96,13 @@ export default function BusinessPage() {
             })}
           </ul>
         </section>
+
+        <p className="business-contact">
+          Contact us -{' '}
+          <a className="business-contact__button" href="mailto:ratemypopup@gmail.com">
+            ratemypopup@gmail.com
+          </a>
+        </p>
       </div>
     </div>
   )

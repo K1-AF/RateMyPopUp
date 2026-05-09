@@ -238,7 +238,9 @@
 }
 
 .review-chip {
-  padding: 0.5rem 0.9rem;
+  /* Minimum 44px height ensures iOS/Android tap targets meet HIG guidelines */
+  min-height: 44px;
+  padding: 0.5rem 1rem;
   font: inherit;
   font-size: 0.875rem;
   font-weight: 600;
@@ -311,7 +313,8 @@
 
 .star-rating__btn {
   display: inline-flex;
-  padding: 0.15rem;
+  /* 0.3rem padding + 28px star = ~34px; bumped to 44px min via touch target below */
+  padding: 0.3rem;
   margin: 0;
   border: none;
   background: transparent;
@@ -319,6 +322,16 @@
   border-radius: 6px;
   line-height: 0;
   transition: transform 0.12s ease;
+  /* Invisible touch-area expansion so thumbs can tap accurately on phones */
+  position: relative;
+}
+
+@media (pointer: coarse) {
+  .star-rating__btn::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+  }
 }
 
 .star-rating__btn:hover {
@@ -444,6 +457,13 @@
     box-shadow 0.15s ease;
 }
 
+/* Vertical resize is awkward on touch screens; disable it */
+@media (pointer: coarse) {
+  .review-textarea {
+    resize: none;
+  }
+}
+
 .review-textarea::placeholder {
   color: #9ca3af;
 }
@@ -483,4 +503,81 @@
 .review-submit__icon {
   flex-shrink: 0;
   color: #fff;
+}
+
+/* ------------------------------------------------------------------ */
+/* Mobile layout polish                                                  */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 600px) {
+  /* Tighter page chrome on phones */
+  .review-page {
+    padding: 1rem 1rem 4rem;
+  }
+
+  /* Slightly smaller gap between form sections */
+  .review-form {
+    gap: 1.5rem;
+  }
+
+  /* Compact header */
+  .review-page__header {
+    margin-bottom: 1.5rem;
+  }
+
+  /* Chips: larger text + full-row wrapping looks better on narrow screens */
+  .review-chips {
+    gap: 0.45rem;
+  }
+
+  .review-chip {
+    font-size: 0.9rem;
+  }
+
+  /* Ensure the company hint is legible */
+  .review-company-hint {
+    font-size: 0.85rem;
+  }
+
+  /* Star row: label on first line, score + stars on the second so nothing
+     gets squished when label text is long */
+  .star-rating__row {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  /* Upload zone: reduce height so it doesn't swallow the screen */
+  .review-upload {
+    min-height: 4.5rem;
+  }
+
+  /* Submit button gets extra bottom margin for the iOS home-indicator bar */
+  .review-form__actions {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Back link: slightly easier to tap */
+  .review-page__back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    font-size: 0.92rem;
+  }
+}
+
+@media (max-width: 380px) {
+  /* On very small phones (SE, Galaxy A14) tighten further */
+  .review-page {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
+
+  .review-page__title {
+    font-size: 1.45rem;
+  }
+
+  .review-chip {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.8rem;
+  }
 }

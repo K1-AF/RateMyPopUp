@@ -24,6 +24,8 @@
 .company-autocomplete__option {
   display: flex;
   align-items: center;
+  /* 44px minimum height so thumbs can tap comfortably */
+  min-height: 44px;
   padding: 0.55rem 0.7rem;
   border-radius: 8px;
   cursor: pointer;
@@ -52,4 +54,18 @@
   font-size: 0.9rem;
   font-style: italic;
   word-break: break-word;
+}
+
+/* Tighter dropdown on very narrow screens */
+@media (max-width: 500px) {
+  .company-autocomplete__list {
+    border-radius: 10px;
+    /* Cap height so the keyboard doesn't push it off-screen */
+    max-height: 40vh;
+  }
+
+  .company-autocomplete__option {
+    padding: 0.65rem 0.85rem;
+    font-size: 1rem;
+  }
 }

@@ -585,3 +585,45 @@
     max-width: 320px;
   }
 }
+
+/* Small phones — icon-only nav so the header stays in one line */
+@media (max-width: 500px) {
+  .site-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .brand-logo {
+    max-width: min(145px, 44vw);
+    height: min(48px, 12vh);
+  }
+
+  /* Show only the icon; hide the text label */
+  .nav-link__text {
+    display: none;
+  }
+
+  .nav-link {
+    /* Ensure the icon-only button still has a comfortable tap target */
+    min-width: 40px;
+    min-height: 40px;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 10px;
+  }
+
+  /* "For Business" is secondary — hide it on the smallest screens to reduce
+     clutter; users can access it once on a wider viewport */
+  .nav-item--business {
+    display: none;
+  }
+
+  .hero {
+    padding: 1.75rem 1rem 2.25rem;
+  }
+
+  .browse-section,
+  .live-section {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
