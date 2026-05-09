@@ -37,20 +37,20 @@ export default function App() {
               <ul className="nav-list">
                 <li>
                   <Link to="/explore" className="nav-link">
-                    <IconSearch className="nav-icon" />
-                    Explore
+                    <IconSearch className="nav-icon" aria-hidden />
+                    <span className="nav-link__text">Explore</span>
                   </Link>
                 </li>
                 <li>
                   <Link to="/review" className="nav-link">
-                    <IconStarOutline className="nav-icon" />
-                    Review
+                    <IconStarOutline className="nav-icon" aria-hidden />
+                    <span className="nav-link__text">Review</span>
                   </Link>
                 </li>
-                <li>
+                <li className="nav-item--business">
                   <Link to="/business" className="nav-link">
-                    <IconBuilding className="nav-icon" />
-                    For Business
+                    <IconBuilding className="nav-icon" aria-hidden />
+                    <span className="nav-link__text">For Business</span>
                   </Link>
                 </li>
               </ul>

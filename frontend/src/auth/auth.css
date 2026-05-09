@@ -205,3 +205,46 @@
   background: rgba(185, 28, 28, 0.08);
   outline: none;
 }
+
+/* ------------------------------------------------------------------ */
+/* Mobile layout polish                                                  */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 600px) {
+  /* Sign-in gate: let the card breathe edge-to-edge on small phones */
+  .auth-gate {
+    padding: 2rem 1rem;
+    align-items: flex-start;
+    padding-top: 3rem;
+  }
+
+  .auth-gate__card {
+    padding: 1.5rem 1.25rem;
+    border-radius: 14px;
+  }
+
+  .auth-gate__title {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 380px) {
+  /* Very small phones: fill the full width */
+  .auth-gate {
+    padding: 2rem 0.75rem;
+  }
+
+  .auth-gate__card {
+    padding: 1.25rem 1rem;
+  }
+}
+
+/* Auth menu dropdown: on small screens ensure it doesn't clip off the left
+   edge (right:0 is fine but the min-width can push it left) */
+@media (max-width: 500px) {
+  .auth-menu__panel {
+    min-width: 11rem;
+    /* Move left if needed so it stays on screen */
+    right: -0.5rem;
+  }
+}
