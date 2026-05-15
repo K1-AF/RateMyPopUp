@@ -18,6 +18,20 @@
   scroll-margin-top: var(--home-header-offset);
 }
 
+/* Full-bleed stack + hotspots (desktop only — mobile uses horizontal cards) */
+.home-banner__desktop {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Hidden on desktop; horizontal snap carousel under 768px */
+.home-banner__mobile {
+  display: none;
+  position: relative;
+  z-index: 1;
+}
+
 .home-banner__img {
   position: absolute;
   inset: 0;
@@ -112,6 +126,73 @@
 .home-banner__dot.is-active {
   background: #ffffff;
   opacity: 1;
+}
+
+/* ----- Hero / banner carousel: mobile (single card + peek, swipe) ----- */
+@media (max-width: 767px) {
+  .home-banner {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .home-banner__desktop {
+    display: none;
+  }
+
+  .home-banner__mobile {
+    display: block;
+  }
+
+  .home-banner__mobile-track {
+    display: flex;
+    align-items: stretch;
+    gap: 0.75rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scroll-padding-inline: 1.25rem;
+    padding: 0.5rem 1.25rem 2.85rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .home-banner__mobile-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .home-banner__mobile-slide {
+    flex: 0 0 min(20rem, calc(100vw - 3.5rem - 2rem));
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 320ms ease-in-out;
+  }
+
+  .home-banner__mobile-slide.is-active {
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+  }
+
+  .home-banner__mobile-img {
+    display: block;
+    width: 100%;
+    height: clamp(13.75rem, 52vw, 16.25rem);
+    min-height: 220px;
+    max-height: 260px;
+    object-fit: cover;
+    object-position: center center;
+    transition: opacity 320ms ease-in-out;
+  }
+
+  /* Controls stay pinned to banner area on short mobile strip */
+  .home-banner__controls {
+    bottom: 0.35rem;
+  }
 }
 
 .home-page {
