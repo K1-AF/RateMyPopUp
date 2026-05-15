@@ -270,6 +270,135 @@
   color: #be185d;
 }
 
+/* Likert scale — horizontal track with numbered points (not chip blocks) */
+
+.review-likert-scale-field {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.review-likert-scale__hints {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6b7280;
+  line-height: 1.25;
+}
+
+.review-likert-scale {
+  position: relative;
+  margin-top: 0.15rem;
+  /* Breathing room so focus rings don’t clip */
+  padding: 0.35rem 0 0.15rem;
+}
+
+.review-likert-scale__nodes {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.review-likert-scale__step {
+  flex: 1 1 0;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* Line segments only *between* circles (not through them) */
+.review-likert-scale__connector {
+  flex: 1 1 0;
+  min-width: 0.35rem;
+  max-width: 100%;
+  height: 4px;
+  align-self: center;
+  margin-top: 0;
+  background: #e5e7eb;
+  border-radius: 999px;
+  transition: background 0.18s ease;
+}
+
+.review-likert-scale__connector.is-filled {
+  background: linear-gradient(90deg, #f9a8d4 0%, #e91e8c 45%, #a78bfa 100%);
+}
+
+.review-likert-scale__node {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 3px solid #d1d5db;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #4b5563;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
+}
+
+.review-likert-scale__node:hover {
+  border-color: #e91e8c;
+  transform: scale(1.05);
+}
+
+.review-likert-scale__node:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 3px;
+}
+
+.review-likert-scale__node.is-selected {
+  border-color: #e91e8c;
+  /* Opaque fill so the track never reads through the circle */
+  background: #fce7f3;
+  color: #9d174d;
+  box-shadow: 0 4px 14px rgba(233, 30, 140, 0.25);
+}
+
+.review-likert-scale__node-value {
+  pointer-events: none;
+  line-height: 1;
+}
+
+.review-likert-scale__current {
+  margin: 0.65rem 0 0;
+  min-height: 1.35rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #5b21b6;
+  text-align: center;
+}
+
+.review-yesno.review-chips {
+  flex-wrap: nowrap;
+}
+
+.review-yesno .review-chip {
+  flex: 1 1 50%;
+  max-width: 12rem;
+  justify-content: center;
+}
+
 /* Star ratings (replaces sliders) */
 
 .review-star-block {

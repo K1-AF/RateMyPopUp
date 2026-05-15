@@ -12,6 +12,8 @@ import { supabase } from './supabase.js'
  * - We serialize array fields (items_secured, reason_visit) as JSON text
  *   because the existing columns are `varchar`. Readers should JSON.parse
  *   with a try/catch and fall back to splitting on comma.
+ * - Experience extras: brand_perception_likert (1–5), purchased_at_popup,
+ *   heard_brand_before, attended_with — see migration 0004_review_experience_questions.sql
  */
 
 export const PROOF_BUCKET = 'review-proofs'

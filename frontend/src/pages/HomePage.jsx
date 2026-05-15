@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import collageTwoImg from '../assets/collage2.png'
 import homeBannerImg from '../assets/homebanner.png'
@@ -21,6 +21,10 @@ export default function HomePage() {
     x: 0,
     y: 0,
   })
+  const mobileTrackRef = useRef(null)
+  const programmaticScrollRef = useRef(false)
+  const activeSlideFromScrollRef = useRef(false)
+
   const bannerSlides = useMemo(
     () => [
       {
@@ -177,55 +181,137 @@ export default function HomePage() {
     setHoverTooltip({ visible: false, text: '', x: 0, y: 0 })
   }
 
+  const scrollMobileToSlide = useCallback((index) => {
+    const track = mobileTrackRef.current
+    if (!track || typeof window === 'undefined') return
+    if (window.matchMedia('(min-width: 768px)').matches) return
+    const slide = track.children[index]
+    if (!slide) return
+    programmaticScrollRef.current = true
+    slide.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+    window.setTimeout(() => {
+      programmaticScrollRef.current = false
+    }, 500)
+  }, [])
+
+  useEffect(() => {
+    if (activeSlideFromScrollRef.current) {
+      activeSlideFromScrollRef.current = false
+      return
+    }
+    scrollMobileToSlide(activeSlide)
+  }, [activeSlide, scrollMobileToSlide])
+
+  const handleMobileTrackScroll = useCallback(() => {
+    if (programmaticScrollRef.current) return
+    const track = mobileTrackRef.current
+    if (!track || typeof window === 'undefined') return
+    if (window.matchMedia('(min-width: 768px)').matches) return
+    const slides = track.querySelectorAll('.home-banner__mobile-slide')
+    if (!slides.length) return
+    const trackRect = track.getBoundingClientRect()
+    const centerX = trackRect.left + trackRect.width / 2
+    let bestIdx = 0
+    let bestDist = Infinity
+    slides.forEach((slide, i) => {
+      const r = slide.getBoundingClientRect()
+      const cx = r.left + r.width / 2
+      const d = Math.abs(cx - centerX)
+      if (d < bestDist) {
+        bestDist = d
+        bestIdx = i
+      }
+    })
+    setActiveSlide((prev) => {
+      if (prev === bestIdx) return prev
+      activeSlideFromScrollRef.current = true
+      return bestIdx
+    })
+  }, [])
+
   return (
     <div className="home-page">
       <div id="top" className="home-banner">
-        {bannerSlides.map((slide, index) => (
-          <img
-            key={slide.id}
-            src={slide.src}
-            alt={slide.alt}
-            className={`home-banner__img ${index === activeSlide ? 'is-active' : ''}`}
-            width={slide.width}
-            height={slide.height}
-            decoding="async"
-            fetchPriority={index === 0 ? 'high' : 'auto'}
-            aria-hidden={index !== activeSlide}
-          />
-        ))}
-        {activeHotspots.length > 0 && (
-          <div className="home-banner__hotspots" aria-hidden={false}>
-            {activeHotspots.map((spot) => (
-              <button
-                key={spot.id}
-                type="button"
-                className="home-banner__hotspot"
-                style={{
-                  left: spot.left,
-                  top: spot.top,
-                  width: spot.width,
-                  height: spot.height,
-                }}
-                aria-label={spot.text}
-                onMouseEnter={(event) => handleHotspotMove(event, spot.text)}
-                onMouseMove={(event) => handleHotspotMove(event, spot.text)}
-                onFocus={(event) => handleHotspotMove(event, spot.text)}
-                onBlur={handleHotspotLeave}
-                onMouseLeave={handleHotspotLeave}
-              />
+        <div className="home-banner__desktop">
+          {bannerSlides.map((slide, index) => (
+            <img
+              key={slide.id}
+              src={slide.src}
+              alt={slide.alt}
+              className={`home-banner__img ${index === activeSlide ? 'is-active' : ''}`}
+              width={slide.width}
+              height={slide.height}
+              decoding="async"
+              fetchPriority={index === 0 ? 'high' : 'auto'}
+              aria-hidden={index !== activeSlide}
+            />
+          ))}
+          {activeHotspots.length > 0 && (
+            <div className="home-banner__hotspots" aria-hidden={false}>
+              {activeHotspots.map((spot) => (
+                <button
+                  key={spot.id}
+                  type="button"
+                  className="home-banner__hotspot"
+                  style={{
+                    left: spot.left,
+                    top: spot.top,
+                    width: spot.width,
+                    height: spot.height,
+                  }}
+                  aria-label={spot.text}
+                  onMouseEnter={(event) => handleHotspotMove(event, spot.text)}
+                  onMouseMove={(event) => handleHotspotMove(event, spot.text)}
+                  onFocus={(event) => handleHotspotMove(event, spot.text)}
+                  onBlur={handleHotspotLeave}
+                  onMouseLeave={handleHotspotLeave}
+                />
+              ))}
+            </div>
+          )}
+          {hoverTooltip.visible && (
+            <div
+              className="home-banner__tooltip"
+              style={{ left: `${hoverTooltip.x + 16}px`, top: `${hoverTooltip.y - 10}px` }}
+              role="status"
+              aria-live="polite"
+            >
+              {hoverTooltip.text}
+            </div>
+          )}
+        </div>
+
+        <div
+          className="home-banner__mobile"
+          aria-label="Banner slideshow"
+          aria-roledescription="carousel"
+        >
+          <div
+            ref={mobileTrackRef}
+            className="home-banner__mobile-track"
+            onScroll={handleMobileTrackScroll}
+          >
+            {bannerSlides.map((slide, index) => (
+              <div
+                key={slide.id}
+                className={`home-banner__mobile-slide ${index === activeSlide ? 'is-active' : ''}`}
+                aria-label={`${index + 1} of ${bannerSlides.length}`}
+                aria-current={index === activeSlide ? 'true' : undefined}
+              >
+                <img
+                  src={slide.src}
+                  alt={slide.alt}
+                  className="home-banner__mobile-img"
+                  width={slide.width}
+                  height={slide.height}
+                  decoding="async"
+                  fetchPriority={index === 0 ? 'high' : 'auto'}
+                />
+              </div>
             ))}
           </div>
-        )}
-        {hoverTooltip.visible && (
-          <div
-            className="home-banner__tooltip"
-            style={{ left: `${hoverTooltip.x + 16}px`, top: `${hoverTooltip.y - 10}px` }}
-            role="status"
-            aria-live="polite"
-          >
-            {hoverTooltip.text}
-          </div>
-        )}
+        </div>
+
         <div className="home-banner__controls" aria-label="Banner slideshow controls">
           {bannerSlides.map((slide, index) => (
             <button
