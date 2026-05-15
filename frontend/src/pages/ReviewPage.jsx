@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext.jsx'
 import { CompanyAutocomplete } from '../components/CompanyAutocomplete.jsx'
@@ -31,6 +31,25 @@ const HEAR_ABOUT_OPTIONS = [
   'Walk-by',
   'Newsletter',
   'Other',
+]
+
+/**
+ * 5-point Likert for brand perception (stored as 1–5 in `brand_perception_likert`).
+ */
+const BRAND_PERCEPTION_LIKERT = [
+  { value: 1, label: 'Strongly disagree' },
+  { value: 2, label: 'Disagree' },
+  { value: 3, label: 'Neutral' },
+  { value: 4, label: 'Agree' },
+  { value: 5, label: 'Strongly agree' },
+]
+
+/** Matches DB `attended_with` CHECK (lowercase). */
+const ATTENDED_WITH_OPTIONS = [
+  { value: 'alone', label: 'Alone' },
+  { value: 'friends', label: 'Friends' },
+  { value: 'partner', label: 'Partner' },
+  { value: 'family', label: 'Family' },
 ]
 
 const MAX_PROOF_BYTES = 5 * 1024 * 1024
@@ -111,6 +130,13 @@ export default function ReviewPage() {
   const [proofError, setProofError] = useState('')
   const [comments, setComments] = useState('')
   const [errors, setErrors] = useState({})
+  /** 0 = none selected; 1–5 = Likert score for brand perception. */
+  const [brandPerceptionLikert, setBrandPerceptionLikert] = useState(0)
+  /** null until user picks Yes or No */
+  const [purchasedAtPopup, setPurchasedAtPopup] = useState(null)
+  const [heardBrandBefore, setHeardBrandBefore] = useState(null)
+  /** '' until user picks; values match DB enum: alone | friends | partner | family */
+  const [attendedWith, setAttendedWith] = useState('')
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [submittedCount, setSubmittedCount] = useState(1)
   const [submitError, setSubmitError] = useState('')
@@ -305,6 +331,19 @@ export default function ReviewPage() {
     } else if (hearAbout === 'Other' && !hearAboutOther.trim()) {
       e.hearAboutOther = 'Please specify how you heard about this pop-up.'
     }
+    if (brandPerceptionLikert < 1 || brandPerceptionLikert > 5) {
+      e.brandPerception =
+        'Please rate whether this experience improved your perception of the brand.'
+    }
+    if (purchasedAtPopup !== true && purchasedAtPopup !== false) {
+      e.purchasedAtPopup = 'Please say whether you made a purchase at this pop-up.'
+    }
+    if (heardBrandBefore !== true && heardBrandBefore !== false) {
+      e.heardBrandBefore = 'Please say whether you had heard of this brand before.'
+    }
+    if (!attendedWith) {
+      e.attendedWith = 'Please say who you attended with.'
+    }
     return e
   }, [
     companiesToSubmit,
@@ -317,6 +356,10 @@ export default function ReviewPage() {
     visitMainOther,
     hearAbout,
     hearAboutOther,
+    brandPerceptionLikert,
+    purchasedAtPopup,
+    heardBrandBefore,
+    attendedWith,
   ])
 
   const focusFirstInvalid = useCallback((e) => {
@@ -358,6 +401,22 @@ export default function ReviewPage() {
     }
     if (e.hearAboutOther) {
       document.getElementById('hear-about-other')?.focus()
+      return
+    }
+    if (e.brandPerception) {
+      document.getElementById('likert-first')?.focus()
+      return
+    }
+    if (e.purchasedAtPopup) {
+      document.getElementById('purchase-yes')?.focus()
+      return
+    }
+    if (e.heardBrandBefore) {
+      document.getElementById('heard-yes')?.focus()
+      return
+    }
+    if (e.attendedWith) {
+      document.getElementById('attended-first')?.focus()
     }
   }, [])
 
@@ -424,6 +483,10 @@ export default function ReviewPage() {
           comments: comments.trim() || null,
           proof: null,
           date: submittedAt,
+          brand_perception_likert: brandPerceptionLikert,
+          purchased_at_popup: purchasedAtPopup,
+          heard_brand_before: heardBrandBefore,
+          attended_with: attendedWith,
         })
         createdCount += 1
 
@@ -777,6 +840,198 @@ export default function ReviewPage() {
             {errors.hearAbout ? (
               <p className="review-field__error" role="alert">
                 {errors.hearAbout}
+              </p>
+            ) : null}
+          </fieldset>
+
+          <fieldset
+            className={`review-field review-likert-scale-field ${errors.brandPerception ? 'review-field--invalid' : ''}`}
+          >
+            <legend className="review-field__label">
+              Has this experience improved your perception of this brand?{' '}
+              <abbr className="review-required" title="required">
+                *
+              </abbr>
+            </legend>
+            <p className="review-likert-scale__hints">
+              <span>Strongly disagree</span>
+              <span>Strongly agree</span>
+            </p>
+            <div
+              className="review-likert-scale"
+              role="radiogroup"
+              aria-label="Brand perception after visit"
+              aria-required="true"
+            >
+              <div className="review-likert-scale__nodes">
+                {BRAND_PERCEPTION_LIKERT.map((opt, i) => (
+                  <Fragment key={opt.value}>
+                    <div className="review-likert-scale__step">
+                      <button
+                        type="button"
+                        id={i === 0 ? 'likert-first' : undefined}
+                        role="radio"
+                        aria-checked={brandPerceptionLikert === opt.value}
+                        aria-label={`${opt.label} (${opt.value} of 5)`}
+                        className={`review-likert-scale__node ${brandPerceptionLikert === opt.value ? 'is-selected' : ''}`}
+                        onClick={() => {
+                          setBrandPerceptionLikert(opt.value)
+                          clearError('brandPerception')
+                        }}
+                      >
+                        <span className="review-likert-scale__node-value">{opt.value}</span>
+                      </button>
+                    </div>
+                    {i < BRAND_PERCEPTION_LIKERT.length - 1 ? (
+                      <div
+                        className={`review-likert-scale__connector ${brandPerceptionLikert > i + 1 ? 'is-filled' : ''}`}
+                        aria-hidden
+                      />
+                    ) : null}
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+            <p className="review-likert-scale__current" aria-live="polite">
+              {brandPerceptionLikert >= 1 && brandPerceptionLikert <= 5
+                ? BRAND_PERCEPTION_LIKERT.find((o) => o.value === brandPerceptionLikert)?.label
+                : '\u00a0'}
+            </p>
+            {errors.brandPerception ? (
+              <p className="review-field__error" role="alert">
+                {errors.brandPerception}
+              </p>
+            ) : null}
+          </fieldset>
+
+          <fieldset
+            className={`review-field review-field--chips ${errors.purchasedAtPopup ? 'review-field--invalid' : ''}`}
+          >
+            <legend className="review-field__label">
+              Did you make a purchase at this pop-up?{' '}
+              <abbr className="review-required" title="required">
+                *
+              </abbr>
+            </legend>
+            <div
+              className="review-yesno review-chips"
+              role="radiogroup"
+              aria-label="Made a purchase"
+              aria-required="true"
+            >
+              <button
+                id="purchase-yes"
+                type="button"
+                role="radio"
+                aria-checked={purchasedAtPopup === true}
+                className={`review-chip ${purchasedAtPopup === true ? 'review-chip--selected' : ''}`}
+                onClick={() => {
+                  setPurchasedAtPopup(true)
+                  clearError('purchasedAtPopup')
+                }}
+              >
+                Yes
+              </button>
+              <button
+                id="purchase-no"
+                type="button"
+                role="radio"
+                aria-checked={purchasedAtPopup === false}
+                className={`review-chip ${purchasedAtPopup === false ? 'review-chip--selected' : ''}`}
+                onClick={() => {
+                  setPurchasedAtPopup(false)
+                  clearError('purchasedAtPopup')
+                }}
+              >
+                No
+              </button>
+            </div>
+            {errors.purchasedAtPopup ? (
+              <p className="review-field__error" role="alert">
+                {errors.purchasedAtPopup}
+              </p>
+            ) : null}
+          </fieldset>
+
+          <fieldset
+            className={`review-field review-field--chips ${errors.heardBrandBefore ? 'review-field--invalid' : ''}`}
+          >
+            <legend className="review-field__label">
+              Have you heard of this brand before?{' '}
+              <abbr className="review-required" title="required">
+                *
+              </abbr>
+            </legend>
+            <div
+              className="review-yesno review-chips"
+              role="radiogroup"
+              aria-label="Heard of brand before visit"
+              aria-required="true"
+            >
+              <button
+                id="heard-yes"
+                type="button"
+                role="radio"
+                aria-checked={heardBrandBefore === true}
+                className={`review-chip ${heardBrandBefore === true ? 'review-chip--selected' : ''}`}
+                onClick={() => {
+                  setHeardBrandBefore(true)
+                  clearError('heardBrandBefore')
+                }}
+              >
+                Yes
+              </button>
+              <button
+                id="heard-no"
+                type="button"
+                role="radio"
+                aria-checked={heardBrandBefore === false}
+                className={`review-chip ${heardBrandBefore === false ? 'review-chip--selected' : ''}`}
+                onClick={() => {
+                  setHeardBrandBefore(false)
+                  clearError('heardBrandBefore')
+                }}
+              >
+                No
+              </button>
+            </div>
+            {errors.heardBrandBefore ? (
+              <p className="review-field__error" role="alert">
+                {errors.heardBrandBefore}
+              </p>
+            ) : null}
+          </fieldset>
+
+          <fieldset
+            className={`review-field review-field--chips ${errors.attendedWith ? 'review-field--invalid' : ''}`}
+          >
+            <legend className="review-field__label">
+              Who did you attend with?{' '}
+              <abbr className="review-required" title="required">
+                *
+              </abbr>
+            </legend>
+            <div className="review-chips" role="radiogroup" aria-label="Who you attended with">
+              {ATTENDED_WITH_OPTIONS.map((opt, i) => (
+                <button
+                  key={opt.value}
+                  id={i === 0 ? 'attended-first' : undefined}
+                  type="button"
+                  role="radio"
+                  aria-checked={attendedWith === opt.value}
+                  className={`review-chip ${attendedWith === opt.value ? 'review-chip--selected' : ''}`}
+                  onClick={() => {
+                    setAttendedWith(opt.value)
+                    clearError('attendedWith')
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {errors.attendedWith ? (
+              <p className="review-field__error" role="alert">
+                {errors.attendedWith}
               </p>
             ) : null}
           </fieldset>
