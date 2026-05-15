@@ -128,9 +128,14 @@
   opacity: 1;
 }
 
-/* ----- Hero / banner carousel: mobile (single card + peek, swipe) ----- */
+/* ----- Hero / banner carousel: mobile (uniform cards, swipe, peek) ----- */
 @media (max-width: 767px) {
   .home-banner {
+    /* ~65–70% width (240–260px); image column height 300–320px; gap 14px */
+    --hero-card-w: clamp(15rem, 67.5vw, 16.25rem);
+    --hero-card-h: clamp(18.75rem, 85vw, 20rem);
+    --hero-gap: 0.875rem;
+    --hero-peek: clamp(1.25rem, 6vw, 1.875rem);
     height: auto;
     min-height: 0;
     overflow: visible;
@@ -142,20 +147,55 @@
 
   .home-banner__mobile {
     display: block;
+    position: relative;
+  }
+
+  /* Decorative stars in the top margin only — never stacked over slides */
+  .home-banner__mobile-deco {
+    position: relative;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 1rem 0.5rem;
+    pointer-events: none;
+  }
+
+  .home-banner__mobile-deco-star {
+    flex: 0 0 auto;
+    color: var(--gold-star, #e8b923);
+    font-size: 1.05rem;
+    line-height: 1;
+    opacity: 0.92;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    transform: none;
+  }
+
+  .home-banner__mobile-deco-star:nth-child(2) {
+    position: absolute;
+    left: 50%;
+    top: 0.35rem;
+    transform: translateX(-50%);
   }
 
   .home-banner__mobile-track {
+    position: relative;
+    z-index: 1;
     display: flex;
-    align-items: stretch;
-    gap: 0.75rem;
+    align-items: center;
+    gap: var(--hero-gap);
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x;
-    scroll-padding-inline: 1.25rem;
-    padding: 0.5rem 1.25rem 2.85rem;
+    /* Symmetric inset so centered snap shows ~½ remainder each side (≈20–35px peek of neighbours on typical phones) */
+    scroll-padding-inline: max(
+      1rem,
+      calc((100vw - var(--hero-card-w) - var(--hero-peek)) / 2)
+    );
+    padding: 0 max(var(--hero-peek), 1rem) 2.85rem max(var(--hero-peek), 1rem);
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
@@ -165,33 +205,46 @@
   }
 
   .home-banner__mobile-slide {
-    flex: 0 0 min(20rem, calc(100vw - 3.5rem - 2rem));
+    flex: 0 0 var(--hero-card-w);
+    width: var(--hero-card-w);
+    min-width: var(--hero-card-w);
+    max-width: var(--hero-card-w);
+    align-self: center;
     scroll-snap-align: center;
     scroll-snap-stop: always;
     border-radius: 14px;
     overflow: hidden;
+    /* No rotation / skew / scale — flat row, same baseline as siblings */
+    transform: none;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    transition: box-shadow 320ms ease-in-out;
+    transition: opacity 320ms ease-in-out;
   }
 
+  /* Uniform card chrome: active slide is not larger or offset */
   .home-banner__mobile-slide.is-active {
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+    transform: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   }
 
   .home-banner__mobile-img {
     display: block;
     width: 100%;
-    height: clamp(13.75rem, 52vw, 16.25rem);
-    min-height: 220px;
-    max-height: 260px;
+    height: var(--hero-card-h);
+    min-height: 300px;
+    max-height: 320px;
     object-fit: cover;
     object-position: center center;
+    transform: none;
     transition: opacity 320ms ease-in-out;
   }
 
-  /* Controls stay pinned to banner area on short mobile strip */
   .home-banner__controls {
     bottom: 0.35rem;
+  }
+
+  /* Avoid dot “pop” scale on touch devices */
+  .home-banner__dot:hover {
+    transform: none;
   }
 }
 

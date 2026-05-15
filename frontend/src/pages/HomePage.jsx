@@ -286,6 +286,12 @@ export default function HomePage() {
           aria-label="Banner slideshow"
           aria-roledescription="carousel"
         >
+          {/* Gold stars sit above the cards so they never cover the carousel */}
+          <div className="home-banner__mobile-deco" aria-hidden="true">
+            <span className="home-banner__mobile-deco-star">★</span>
+            <span className="home-banner__mobile-deco-star">★</span>
+            <span className="home-banner__mobile-deco-star">★</span>
+          </div>
           <div
             ref={mobileTrackRef}
             className="home-banner__mobile-track"
