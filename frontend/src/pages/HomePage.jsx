@@ -3,14 +3,13 @@ import { Link, useLocation } from 'react-router-dom'
 import collageTwoImg from '../assets/collage2.png'
 import homeBannerImg from '../assets/homebanner.png'
 import { IconSearch, IconStarFilled } from '../components/Icons.jsx'
-import { BrowseLiveSections } from '../components/BrowseLiveSections.jsx'
 import { CommunityStats } from '../components/CommunityStats.jsx'
 import { LeaderboardSection } from '../components/LeaderboardSection.jsx'
 import { RecentReviewsCarousel } from '../components/RecentReviewsCarousel.jsx'
 import './HomePage.css'
 
 /**
- * Landing page: hero, browse/live sections, community stats.
+ * Landing page: hero, reviews, leaderboard, community stats.
  */
 export default function HomePage() {
   const location = useLocation()
@@ -353,8 +352,6 @@ export default function HomePage() {
       </section>
 
       <RecentReviewsCarousel />
-
-      <BrowseLiveSections />
 
       <LeaderboardSection />
 

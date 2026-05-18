@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { fetchRecentReviews, parseMultiField } from '../utils/reviews.js'
+import { fetchRecentReviews, getProofDisplayUrl, parseMultiField } from '../utils/reviews.js'
 import './RecentReviewsCarousel.css'
 
 /**
@@ -148,6 +148,7 @@ function adaptRow(row) {
     visitMain: parseMultiField(row.reason_visit),
     hearAbout: row.hear_about || '',
     comments: row.comments || '',
+    proofUrl: row.proofUrl ?? getProofDisplayUrl(row.proof) ?? null,
   }
 }
 
@@ -190,6 +191,9 @@ function collapseCollaborativeRows(rows) {
     if (companyName && !bucket._companies.includes(companyName)) {
       bucket._companies.push(companyName)
     }
+    if (!bucket.proof && row.proof) {
+      bucket.proof = row.proof
+    }
   }
 
   return order.map((key) => {
@@ -217,6 +221,7 @@ export function RecentReviewsCarousel() {
   const [reviews, setReviews] = useState(seed)
   const [active, setActive] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [proofHidden, setProofHidden] = useState({})
   const wrapperRef = useRef(null)
 
   useEffect(() => {
@@ -251,6 +256,7 @@ export function RecentReviewsCarousel() {
   }
 
   const activeReview = reviews[active]
+  const showProof = Boolean(activeReview.proofUrl) && !proofHidden[activeReview.id]
 
   return (
     <section
@@ -307,6 +313,21 @@ export function RecentReviewsCarousel() {
               <StarRow label="Queue" value={activeReview.ratings.queue} />
               <StarRow label="Goodie bag" value={activeReview.ratings.goodie} />
             </div>
+
+            {showProof ? (
+              <figure className="recent-review__photo">
+                <img
+                  src={activeReview.proofUrl}
+                  alt={`Photo from ${activeReview.reviewer}'s visit to ${activeReview.company}`}
+                  className="recent-review__photo-img"
+                  loading="lazy"
+                  decoding="async"
+                  onError={() =>
+                    setProofHidden((prev) => ({ ...prev, [activeReview.id]: true }))
+                  }
+                />
+              </figure>
+            ) : null}
 
             {activeReview.comments && (
               <p className="recent-review__comments">

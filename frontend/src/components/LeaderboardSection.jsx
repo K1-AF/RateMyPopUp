@@ -3,6 +3,7 @@ import { fetchLeaderboard } from '../utils/leaderboard.js'
 import { supabase } from '../utils/supabase.js'
 import {
   IconClock,
+  IconGift,
   IconStarFilled,
   IconTrendDown,
   IconTrendUp,
@@ -13,6 +14,7 @@ const TABS = [
   { id: 'best', label: 'Best', icon: IconTrendUp },
   { id: 'worst', label: 'Worst', icon: IconTrendDown },
   { id: 'queue', label: 'Queue', icon: IconClock },
+  { id: 'freebies', label: 'Best freebies', icon: IconGift },
 ]
 
 function rankBadgeClass(rank) {
@@ -24,16 +26,22 @@ function rankBadgeClass(rank) {
 /** Which score column a given tab showcases in the star on the right. */
 function primaryScore(tab, row) {
   if (tab === 'queue') return Number(row.avg_queue_speed ?? 0)
+  if (tab === 'freebies') return Number(row.avg_goodie ?? 0)
   return Number(row.avg_overall ?? 0)
 }
 
 /**
- * Home leaderboards: Best / Worst / Queue — driven by the
+ * Home leaderboards: Best / Worst / Queue / Best freebies — driven by the
  * `company_leaderboard` view and auto-refreshed via Realtime on `review`.
  */
 export function LeaderboardSection() {
   const [tab, setTab] = useState('best')
-  const [rowsByTab, setRowsByTab] = useState({ best: [], worst: [], queue: [] })
+  const [rowsByTab, setRowsByTab] = useState({
+    best: [],
+    worst: [],
+    queue: [],
+    freebies: [],
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const mountedRef = useRef(true)
@@ -49,13 +57,14 @@ export function LeaderboardSection() {
   const refresh = useCallback(async () => {
     setError('')
     try {
-      const [best, worst, queue] = await Promise.all([
+      const [best, worst, queue, freebies] = await Promise.all([
         fetchLeaderboard('best', 5),
         fetchLeaderboard('worst', 5),
         fetchLeaderboard('queue', 5),
+        fetchLeaderboard('freebies', 5),
       ])
       if (!mountedRef.current) return
-      setRowsByTab({ best, worst, queue })
+      setRowsByTab({ best, worst, queue, freebies })
     } catch (err) {
       if (!mountedRef.current) return
       setError(err?.message || 'Could not load leaderboard')

@@ -143,6 +143,26 @@
   font-style: italic;
 }
 
+.recent-review__photo {
+  margin: 0 0 1rem;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(124, 58, 237, 0.12);
+  background: #f3f0fa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.recent-review__photo-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(520px, 68vh);
+  object-fit: contain;
+  object-position: center;
+}
+
 .recent-review__chips-group {
   display: flex;
   align-items: center;
