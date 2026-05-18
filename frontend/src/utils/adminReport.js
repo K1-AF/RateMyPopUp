@@ -25,7 +25,9 @@ export function summarizeCompanyReviews(reviews) {
   const vibeAvg = avg(sorted.map((r) => r.vibe || null))
   const queueAvg = avg(sorted.map((r) => r.queueSpeed || null))
   const goodieAvg = avg(sorted.map((r) => r.goodieQuality || null))
+  const staffAvg = avg(sorted.map((r) => r.staffHelpfulness || null))
   const perceptionAvg = avg(sorted.map((r) => r.brandPerceptionLikert || null))
+  const onlinePurchaseAvg = avg(sorted.map((r) => r.onlinePurchaseLikert || null))
   const overallAvg = avg([vibeAvg, queueAvg, goodieAvg].map((n) => (Number.isFinite(n) ? n : null)))
   const purchases = sorted.filter((r) => r.purchasedAtPopup).length
   const heardBefore = sorted.filter((r) => r.heardBrandBefore).length
@@ -38,7 +40,9 @@ export function summarizeCompanyReviews(reviews) {
       vibeAvg,
       queueAvg,
       goodieAvg,
+      staffAvg,
       perceptionAvg,
+      onlinePurchaseAvg,
       overallAvg,
       purchaseRate: pct(purchases, reviewCount),
       heardBeforeRate: pct(heardBefore, reviewCount),
@@ -87,10 +91,12 @@ function buildCompanyReport(rows) {
       vibe: Number(row.vibe) || 0,
       queueSpeed: Number(row.queue_speed) || 0,
       goodieQuality: Number(row.goodie_bag_quality) || 0,
+      staffHelpfulness: Number(row.staff_helpfulness) || 0,
       itemsSecured: parseMultiField(row.items_secured),
       reasonVisit: parseMultiField(row.reason_visit),
       hearAbout: row.hear_about || '',
       brandPerceptionLikert: Number(row.brand_perception_likert) || 0,
+      onlinePurchaseLikert: Number(row.online_purchase_likert) || 0,
       purchasedAtPopup: row.purchased_at_popup === true,
       heardBrandBefore: row.heard_brand_before === true,
       attendedWith: row.attended_with || '',

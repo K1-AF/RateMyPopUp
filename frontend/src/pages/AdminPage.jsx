@@ -554,7 +554,14 @@ export default function AdminPage() {
                     <strong>Goodie Quality:</strong> {fmtAvg(company.summary.goodieAvg)}
                   </p>
                   <p>
+                    <strong>Staff Helpfulness:</strong> {fmtAvg(company.summary.staffAvg)}
+                  </p>
+                  <p>
                     <strong>Perception Lift:</strong> {fmtAvg(company.summary.perceptionAvg)}
+                  </p>
+                  <p>
+                    <strong>Online Purchase Intent:</strong>{' '}
+                    {fmtAvg(company.summary.onlinePurchaseAvg)}
                   </p>
                   <p>
                     <strong>Purchase rate:</strong> {fmtPct(company.summary.purchaseRate)}
@@ -576,7 +583,9 @@ export default function AdminPage() {
                           <th>Vibe</th>
                           <th>Queue</th>
                           <th>Goodie</th>
+                          <th>Staff</th>
                           <th>Perception</th>
+                          <th>Buy Online</th>
                           <th>Purchased</th>
                           <th>Heard Before</th>
                           <th>Attended With</th>
@@ -594,7 +603,9 @@ export default function AdminPage() {
                             <td>{review.vibe || '—'}</td>
                             <td>{review.queueSpeed || '—'}</td>
                             <td>{review.goodieQuality || '—'}</td>
+                            <td>{review.staffHelpfulness || '—'}</td>
                             <td>{review.brandPerceptionLikert || '—'}</td>
+                            <td>{review.onlinePurchaseLikert || '—'}</td>
                             <td>{review.purchasedAtPopup ? 'Yes' : 'No'}</td>
                             <td>{review.heardBrandBefore ? 'Yes' : 'No'}</td>
                             <td>{review.attendedWith || '—'}</td>
