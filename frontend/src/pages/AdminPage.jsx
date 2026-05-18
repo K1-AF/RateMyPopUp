@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AdminRatingBars, AdminTimelineBars } from '../components/admin/AdminAnalyticsCharts.jsx'
 import {
   ADMIN_COMPARE_MAX,
@@ -47,6 +48,9 @@ function reviewerLabel(review) {
 }
 
 export default function AdminPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const focusedCompanyId = searchParams.get('company') || ''
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [report, setReport] = useState({
@@ -100,31 +104,84 @@ export default function AdminPage() {
     [report.companies, filterOptions]
   )
 
+  const focusedCompany = useMemo(
+    () => filteredCompanies.find((c) => c.companyId === focusedCompanyId) ?? null,
+    [filteredCompanies, focusedCompanyId]
+  )
+
+  const isFocused = Boolean(focusedCompany)
+
+  const displayCompanies = useMemo(() => {
+    if (!isFocused) return filteredCompanies
+    return focusedCompany ? [focusedCompany] : []
+  }, [filteredCompanies, focusedCompany, isFocused])
+
+  useEffect(() => {
+    if (focusedCompanyId && !focusedCompany && !loading) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.delete('company')
+          return next
+        },
+        { replace: true }
+      )
+    }
+  }, [focusedCompanyId, focusedCompany, loading, setSearchParams])
+
+  const focusCompany = useCallback(
+    (companyId) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          if (companyId) next.set('company', companyId)
+          else next.delete('company')
+          return next
+        },
+        { replace: false }
+      )
+    },
+    [setSearchParams]
+  )
+
+  const clearFocus = useCallback(() => focusCompany(''), [focusCompany])
+
   const visibleIds = useMemo(() => new Set(filteredCompanies.map((c) => c.companyId)), [filteredCompanies])
 
   useEffect(() => {
-    setCompareIds((prev) => prev.filter((id) => visibleIds.has(id)))
-  }, [visibleIds])
-
-  const filteredTotals = useMemo(() => {
-    const reviewCount = filteredCompanies.reduce((s, c) => s + c.summary.reviewCount, 0)
-    const commentsCount = filteredCompanies.reduce((s, c) => s + c.summary.commentsCount, 0)
-    return {
-      companyCount: filteredCompanies.length,
-      reviewCount,
-      commentsCount,
+    if (isFocused) {
+      setCompareIds([])
+      return
     }
-  }, [filteredCompanies])
+    setCompareIds((prev) => prev.filter((id) => visibleIds.has(id)))
+  }, [visibleIds, isFocused])
+
+  const summaryStats = useMemo(() => {
+    if (isFocused && focusedCompany) {
+      return {
+        labelSuffix: ' (this company)',
+        companyCount: 1,
+        reviewCount: focusedCompany.summary.reviewCount,
+        commentsCount: focusedCompany.summary.commentsCount,
+      }
+    }
+    return {
+      labelSuffix: ' (filtered list)',
+      companyCount: filteredCompanies.length,
+      reviewCount: filteredCompanies.reduce((s, c) => s + c.summary.reviewCount, 0),
+      commentsCount: filteredCompanies.reduce((s, c) => s + c.summary.commentsCount, 0),
+    }
+  }, [isFocused, focusedCompany, filteredCompanies])
 
   const timelineBuckets = useMemo(() => {
-    const all = collectReviewsForTimeline(filteredCompanies)
+    const all = collectReviewsForTimeline(displayCompanies)
     return buildMonthlyBuckets(all)
-  }, [filteredCompanies])
+  }, [displayCompanies])
 
-  const chartCompanies = useMemo(
-    () => chartCompaniesFromSelection(filteredCompanies, compareIds),
-    [filteredCompanies, compareIds]
-  )
+  const chartCompanies = useMemo(() => {
+    if (isFocused && focusedCompany) return [focusedCompany]
+    return chartCompaniesFromSelection(filteredCompanies, compareIds)
+  }, [isFocused, focusedCompany, filteredCompanies, compareIds])
 
   const compareCompanies = useMemo(
     () =>
@@ -150,7 +207,8 @@ export default function AdminPage() {
     Boolean(dateFrom) ||
     Boolean(dateTo) ||
     Boolean(String(minReviews).trim()) ||
-    hideEmptyInRange
+    hideEmptyInRange ||
+    isFocused
 
   return (
     <div className="admin-page">
@@ -163,6 +221,12 @@ export default function AdminPage() {
             </p>
             <p className="admin-page__meta">
               Last updated: {lastUpdated ? lastUpdated.toLocaleString() : '—'}
+              {totals.companyCount != null ? (
+                <>
+                  {' '}
+                  · All data: {totals.companyCount} companies, {totals.reviewCount} reviews
+                </>
+              ) : null}
             </p>
           </div>
           <div className="admin-page__actions no-print">
@@ -180,23 +244,50 @@ export default function AdminPage() {
           </div>
         </header>
 
-        <section className="admin-summary" aria-label="Global totals">
+        <section className="admin-summary" aria-label={isFocused ? 'Company totals' : 'Filtered totals'}>
           <div className="admin-summary__item">
-            <p className="admin-summary__label">Companies (all data)</p>
-            <p className="admin-summary__value">{totals.companyCount ?? 0}</p>
+            <p className="admin-summary__label">Companies{summaryStats.labelSuffix}</p>
+            <p className="admin-summary__value">{summaryStats.companyCount}</p>
           </div>
           <div className="admin-summary__item">
-            <p className="admin-summary__label">Reviews (all data)</p>
-            <p className="admin-summary__value">{totals.reviewCount ?? 0}</p>
+            <p className="admin-summary__label">Reviews{summaryStats.labelSuffix}</p>
+            <p className="admin-summary__value">{summaryStats.reviewCount}</p>
           </div>
           <div className="admin-summary__item">
-            <p className="admin-summary__label">Comments (all data)</p>
-            <p className="admin-summary__value">{totals.commentsCount ?? 0}</p>
+            <p className="admin-summary__label">Comments{summaryStats.labelSuffix}</p>
+            <p className="admin-summary__value">{summaryStats.commentsCount}</p>
           </div>
         </section>
 
+        {isFocused && focusedCompany ? (
+          <section className="admin-focus-banner no-print" aria-label="Company focus">
+            <div className="admin-focus-banner__text">
+              <p className="admin-focus-banner__label">Viewing company</p>
+              <h2 className="admin-focus-banner__name">{focusedCompany.companyName}</h2>
+            </div>
+            <button type="button" className="btn btn-secondary" onClick={clearFocus}>
+              ← All companies
+            </button>
+          </section>
+        ) : null}
+
         <section className="admin-toolbar no-print" aria-label="Filter and sort companies">
           <div className="admin-toolbar__row">
+            <label className="admin-toolbar__field">
+              <span className="admin-toolbar__label">Jump to company</span>
+              <select
+                className="admin-toolbar__select"
+                value={focusedCompanyId}
+                onChange={(e) => focusCompany(e.target.value)}
+              >
+                <option value="">All companies — overview</option>
+                {filteredCompanies.map((c) => (
+                  <option key={c.companyId} value={c.companyId}>
+                    {c.companyName} ({c.summary.reviewCount} reviews)
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="admin-toolbar__field">
               <span className="admin-toolbar__label">Search companies</span>
               <input
@@ -262,26 +353,67 @@ export default function AdminPage() {
             </label>
           </div>
           <p className="admin-toolbar__meta">
-            Showing <strong>{filteredTotals.companyCount}</strong> companies,{' '}
-            <strong>{filteredTotals.reviewCount}</strong> reviews
-            {hasActiveFilters ? ' (filters applied)' : ''}. Compare up to {ADMIN_COMPARE_MAX} companies; charts use
-            your selection when set, otherwise the top companies in this list.
+            {isFocused && focusedCompany ? (
+              <>
+                Stats for <strong>{focusedCompany.companyName}</strong>
+                {hasActiveFilters ? ' with current filters applied' : ''}. Date filters still apply to
+                reviews shown below.
+              </>
+            ) : (
+              <>
+                Showing <strong>{summaryStats.companyCount}</strong> companies,{' '}
+                <strong>{summaryStats.reviewCount}</strong> reviews
+                {hasActiveFilters ? ' (filters applied)' : ''}. Click a company or use the dropdown to view one
+                company only. Compare up to {ADMIN_COMPARE_MAX} companies; charts use your selection when set.
+              </>
+            )}
           </p>
         </section>
+
+        {!isFocused && filteredCompanies.length > 0 ? (
+          <section className="admin-company-index no-print" aria-label="Company list">
+            <h2 className="admin-company-index__title">Companies</h2>
+            <ul className="admin-company-index__list">
+              {filteredCompanies.map((c) => (
+                <li key={c.companyId}>
+                  <button
+                    type="button"
+                    className="admin-company-index__btn"
+                    onClick={() => focusCompany(c.companyId)}
+                  >
+                    <span className="admin-company-index__name">{c.companyName}</span>
+                    <span className="admin-company-index__meta">
+                      {c.summary.reviewCount} reviews · {fmtAvg(c.summary.overallAvg)} overall
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <div className="admin-charts no-print" aria-label="Charts">
           <AdminRatingBars
             title={
-              compareIds.length
-                ? `Rating breakdown — selected (${Math.min(compareIds.length, ADMIN_COMPARE_MAX)} companies)`
-                : `Rating breakdown — top ${Math.min(chartCompanies.length, ADMIN_COMPARE_MAX)} by current sort`
+              isFocused && focusedCompany
+                ? `Rating breakdown — ${focusedCompany.companyName}`
+                : compareIds.length
+                  ? `Rating breakdown — selected (${Math.min(compareIds.length, ADMIN_COMPARE_MAX)} companies)`
+                  : `Rating breakdown — top ${Math.min(chartCompanies.length, ADMIN_COMPARE_MAX)} by current sort`
             }
             companies={chartCompanies}
           />
-          <AdminTimelineBars title="Reviews per month (filtered list)" buckets={timelineBuckets} />
+          <AdminTimelineBars
+            title={
+              isFocused && focusedCompany
+                ? `Reviews per month — ${focusedCompany.companyName}`
+                : 'Reviews per month (filtered list)'
+            }
+            buckets={timelineBuckets}
+          />
         </div>
 
-        {compareCompanies.length > 0 ? (
+        {!isFocused && compareCompanies.length > 0 ? (
           <section className="admin-compare no-print" aria-label="Company comparison">
             <div className="admin-compare__head">
               <h2 className="admin-compare__title">Compare companies</h2>
@@ -366,26 +498,44 @@ export default function AdminPage() {
           <p className="admin-page__empty">No companies or reviews found.</p>
         ) : null}
 
-        {!error &&
-          filteredCompanies.map((company) => {
+        {!error && isFocused
+          ? displayCompanies.map((company) => {
             const isCompared = compareIds.includes(company.companyId)
-            const compareDisabled =
-              !isCompared && compareIds.length >= ADMIN_COMPARE_MAX
+            const compareDisabled = !isCompared && compareIds.length >= ADMIN_COMPARE_MAX
             return (
-              <section key={company.companyId} className="admin-company" aria-label={company.companyName}>
+              <section
+                key={company.companyId}
+                className={`admin-company${isFocused ? ' admin-company--focused' : ''}`}
+                aria-label={company.companyName}
+              >
                 <header className="admin-company__header">
                   <div className="admin-company__header-main">
-                    <h2 className="admin-company__title">{company.companyName}</h2>
-                    <label className="admin-company__compare no-print">
-                      <input
-                        type="checkbox"
-                        checked={isCompared}
-                        disabled={compareDisabled}
-                        onChange={() => toggleCompare(company.companyId)}
-                        aria-label={`Include ${company.companyName} in compare (max ${ADMIN_COMPARE_MAX})`}
-                      />
-                      <span>Compare</span>
-                    </label>
+                    {isFocused ? (
+                      <h2 className="admin-company__title">{company.companyName}</h2>
+                    ) : (
+                      <h2 className="admin-company__title">
+                        <button
+                          type="button"
+                          className="admin-company__title-btn no-print"
+                          onClick={() => focusCompany(company.companyId)}
+                        >
+                          {company.companyName}
+                        </button>
+                        <span className="admin-company__title-print">{company.companyName}</span>
+                      </h2>
+                    )}
+                    {!isFocused ? (
+                      <label className="admin-company__compare no-print">
+                        <input
+                          type="checkbox"
+                          checked={isCompared}
+                          disabled={compareDisabled}
+                          onChange={() => toggleCompare(company.companyId)}
+                          aria-label={`Include ${company.companyName} in compare (max ${ADMIN_COMPARE_MAX})`}
+                        />
+                        <span>Compare</span>
+                      </label>
+                    ) : null}
                   </div>
                   <span className="admin-company__count">{company.summary.reviewCount} reviews</span>
                 </header>
@@ -460,7 +610,8 @@ export default function AdminPage() {
                 )}
               </section>
             )
-          })}
+          })
+          : null}
       </div>
     </div>
   )
