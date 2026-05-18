@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext.jsx'
 import { CompanyAutocomplete } from '../components/CompanyAutocomplete.jsx'
@@ -8,6 +8,7 @@ import {
   getOrCreateCompanyId,
   insertReview,
   uploadReviewProof,
+  validateProofImage,
 } from '../utils/reviews.js'
 import './ReviewPage.css'
 
@@ -52,8 +53,6 @@ const ATTENDED_WITH_OPTIONS = [
   { value: 'family', label: 'Family' },
 ]
 
-const MAX_PROOF_BYTES = 5 * 1024 * 1024
-/** Max length for "Other" free-text fields (limits abuse / oversized payloads). */
 const MAX_OTHER_TEXT = 200
 /** Hard cap to avoid accidental spammy multi-company submissions. */
 const MAX_COLLAB_COMPANIES = 6
@@ -127,6 +126,9 @@ export default function ReviewPage() {
   const [visitMainOther, setVisitMainOther] = useState('')
   const [hearAboutOther, setHearAboutOther] = useState('')
   const [proofFile, setProofFile] = useState(null)
+  const [proofPreviewUrl, setProofPreviewUrl] = useState(null)
+  const proofPreviewRef = useRef(null)
+  const [proofValidating, setProofValidating] = useState(false)
   const [proofError, setProofError] = useState('')
   const [comments, setComments] = useState('')
   const [errors, setErrors] = useState({})
@@ -280,27 +282,40 @@ export default function ReviewPage() {
     [clearError],
   )
 
-  const onProofChange = useCallback((e) => {
+  const clearProofPreview = useCallback(() => {
+    if (proofPreviewRef.current) {
+      URL.revokeObjectURL(proofPreviewRef.current)
+      proofPreviewRef.current = null
+    }
+    setProofPreviewUrl(null)
+  }, [])
+
+  const onProofChange = useCallback(async (e) => {
     const file = e.target.files?.[0]
     setProofError('')
-    if (!file) {
-      setProofFile(null)
-      return
+    clearProofPreview()
+    setProofFile(null)
+
+    if (!file) return
+
+    setProofValidating(true)
+    try {
+      const result = await validateProofImage(file)
+      if (!result.ok) {
+        setProofError(result.error)
+        e.target.value = ''
+        return
+      }
+      setProofFile(file)
+      const url = URL.createObjectURL(file)
+      proofPreviewRef.current = url
+      setProofPreviewUrl(url)
+    } finally {
+      setProofValidating(false)
     }
-    if (!file.type.startsWith('image/')) {
-      setProofError('Please upload an image file.')
-      setProofFile(null)
-      e.target.value = ''
-      return
-    }
-    if (file.size > MAX_PROOF_BYTES) {
-      setProofError('Image must be 5MB or smaller.')
-      setProofFile(null)
-      e.target.value = ''
-      return
-    }
-    setProofFile(file)
-  }, [])
+  }, [clearProofPreview])
+
+  useEffect(() => () => clearProofPreview(), [clearProofPreview])
 
   const validate = useCallback(() => {
     const e = {}
@@ -434,6 +449,15 @@ export default function ReviewPage() {
       return
     }
 
+    if (proofFile) {
+      const proofCheck = await validateProofImage(proofFile)
+      if (!proofCheck.ok) {
+        setProofError(proofCheck.error)
+        document.getElementById('proof-upload')?.focus()
+        return
+      }
+    }
+
     setSubmitting(true)
     try {
       // Resolve every selected collaborator to a canonical company uuid.
@@ -470,6 +494,7 @@ export default function ReviewPage() {
       // feed can collapse them into a single combined card.
       const submittedAt = new Date().toISOString()
       let createdCount = 0
+      let proofAttached = false
       for (const companyId of resolvedCompanyIds) {
         const review = await insertReview({
           account_id: user.id,
@@ -490,7 +515,7 @@ export default function ReviewPage() {
         })
         createdCount += 1
 
-        if (proofFile) {
+        if (proofFile && !proofAttached) {
           try {
             const proofMeta = await uploadReviewProof({
               file: proofFile,
@@ -499,14 +524,14 @@ export default function ReviewPage() {
             })
             if (proofMeta) {
               await attachProofToReview(review.review_id, proofMeta)
+              proofAttached = true
             }
           } catch (uploadErr) {
-            /*
-             * Non-fatal: review is already saved. Surface a soft error so
-             * the user can retry from their profile once that exists, but
-             * still proceed to the success state.
-             */
             console.warn('[review] proof upload failed:', uploadErr?.message)
+            setSubmitError(
+              uploadErr?.message ||
+                'Your review was saved, but the photo could not be uploaded. Try again without a photo or re-submit later.'
+            )
           }
         }
       }
@@ -1047,14 +1072,29 @@ export default function ReviewPage() {
               accept="image/jpeg,image/png,image/webp,image/gif"
               className="review-file-input"
               onChange={onProofChange}
+              disabled={proofValidating || submitting}
               aria-describedby={proofError ? 'proof-error' : undefined}
             />
             <label htmlFor="proof-upload" className="review-upload">
               <IconCamera className="review-upload__icon" />
               <span className="review-upload__text">
-                {proofFile ? proofFile.name : 'Tap to upload photo'}
+                {proofValidating
+                  ? 'Checking photo…'
+                  : proofFile
+                    ? proofFile.name
+                    : 'Tap to upload photo'}
               </span>
             </label>
+            {proofPreviewUrl ? (
+              <div className="review-proof-preview">
+                <img
+                  src={proofPreviewUrl}
+                  alt="Preview of your proof of visit"
+                  className="review-proof-preview__img"
+                />
+                <p className="review-proof-preview__hint">Photo looks good — it will appear with your review.</p>
+              </div>
+            ) : null}
             {proofError ? (
               <p id="proof-error" className="review-field__error" role="alert">
                 {proofError}

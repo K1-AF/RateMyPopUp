@@ -17,13 +17,125 @@ import { supabase } from './supabase.js'
  */
 
 export const PROOF_BUCKET = 'review-proofs'
-const MAX_PROOF_BYTES = 5 * 1024 * 1024
-const ALLOWED_PROOF_TYPES = new Set([
+export const MAX_PROOF_BYTES = 5 * 1024 * 1024
+export const ALLOWED_PROOF_TYPES = new Set([
   'image/jpeg',
   'image/png',
   'image/webp',
   'image/gif',
 ])
+
+const MIN_PROOF_DIMENSION = 32
+const MAX_PROOF_DIMENSION = 8000
+
+/** Parses stored proof JSON from the review row. */
+export function parseProof(raw) {
+  if (!raw) return null
+  if (typeof raw === 'object' && raw.bucket && raw.path) return raw
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw)
+      if (parsed?.bucket && parsed?.path) return parsed
+    } catch {
+      /* not JSON */
+    }
+  }
+  return null
+}
+
+/**
+ * Resolves a browser-loadable URL for a stored proof image (sync fallback).
+ * Prefer resolveProofDisplayUrl() for the home feed — private buckets need signed URLs.
+ */
+export function getProofDisplayUrl(proof) {
+  const meta = parseProof(proof)
+  if (!meta) return null
+  if (typeof meta.publicUrl === 'string' && meta.publicUrl.startsWith('http')) {
+    return meta.publicUrl
+  }
+  const bucket = meta.bucket || PROOF_BUCKET
+  const { data } = supabase.storage.from(bucket).getPublicUrl(meta.path)
+  return data?.publicUrl ?? null
+}
+
+/** Signed URL lifetime when loading proofs on the public home feed (24h). */
+const PROOF_SIGNED_URL_SECONDS = 60 * 60 * 24
+
+/**
+ * Resolves a loadable proof URL for display (home carousel, company pages).
+ * Uses signed URLs so private `review-proofs` buckets work with public read policy.
+ */
+export async function resolveProofDisplayUrl(proof) {
+  const meta = parseProof(proof)
+  if (!meta?.path) return null
+
+  const bucket = meta.bucket || PROOF_BUCKET
+
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(meta.path, PROOF_SIGNED_URL_SECONDS)
+
+  if (!error && data?.signedUrl) {
+    return data.signedUrl
+  }
+
+  return getProofDisplayUrl(proof)
+}
+
+async function attachProofUrlsToReviews(rows) {
+  if (!rows?.length) return rows ?? []
+  return Promise.all(
+    rows.map(async (row) => {
+      if (!row.proof) return row
+      const proofUrl = await resolveProofDisplayUrl(row.proof)
+      return proofUrl ? { ...row, proofUrl } : row
+    })
+  )
+}
+
+/**
+ * Client-side proof validation: MIME whitelist, size cap, and decode check
+ * so renamed/non-image files cannot slip through.
+ */
+export async function validateProofImage(file) {
+  if (!file) {
+    return { ok: false, error: 'No file selected.' }
+  }
+  if (!ALLOWED_PROOF_TYPES.has(file.type)) {
+    return { ok: false, error: 'Please upload a JPEG, PNG, WebP, or GIF image.' }
+  }
+  if (file.size > MAX_PROOF_BYTES) {
+    return { ok: false, error: 'Image must be 5MB or smaller.' }
+  }
+  if (file.size < 100) {
+    return { ok: false, error: 'That file is too small to be a valid photo.' }
+  }
+
+  const objectUrl = URL.createObjectURL(file)
+  try {
+    const img = await decodeImage(objectUrl)
+    if (img.naturalWidth < MIN_PROOF_DIMENSION || img.naturalHeight < MIN_PROOF_DIMENSION) {
+      return { ok: false, error: 'Image must be at least 32×32 pixels.' }
+    }
+    if (img.naturalWidth > MAX_PROOF_DIMENSION || img.naturalHeight > MAX_PROOF_DIMENSION) {
+      return { ok: false, error: 'Image dimensions are too large (max 8000×8000).' }
+    }
+    return { ok: true, width: img.naturalWidth, height: img.naturalHeight }
+  } catch {
+    return { ok: false, error: 'That file could not be read as an image. Try another photo.' }
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
+}
+
+function decodeImage(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('decode failed'))
+    img.src = url
+  })
+}
 
 export function parseMultiField(raw) {
   if (!raw) return []
@@ -222,7 +334,12 @@ export async function uploadReviewProof({ file, userId, reviewId }) {
     })
   if (upErr) throw new Error(upErr.message || 'Upload failed')
 
-  return { bucket: PROOF_BUCKET, path }
+  const { data: publicData } = supabase.storage.from(PROOF_BUCKET).getPublicUrl(path)
+  return {
+    bucket: PROOF_BUCKET,
+    path,
+    publicUrl: publicData?.publicUrl ?? null,
+  }
 }
 
 /**
@@ -255,6 +372,7 @@ export async function fetchRecentReviews(limit = 10) {
     .select(
       `
         review_id,
+        account_id,
         vibe,
         queue_speed,
         goodie_bag_quality,
@@ -263,6 +381,7 @@ export async function fetchRecentReviews(limit = 10) {
         hear_about,
         comments,
         date,
+        proof,
         company:company_id ( company_name ),
         account:account_id ( display_name, avatar_url )
       `
@@ -271,5 +390,5 @@ export async function fetchRecentReviews(limit = 10) {
     .limit(limit)
 
   if (error) throw new Error(error.message || 'Failed to load reviews')
-  return data ?? []
+  return attachProofUrlsToReviews(data ?? [])
 }
