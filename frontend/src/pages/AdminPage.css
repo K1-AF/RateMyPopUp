@@ -1,0 +1,188 @@
+.admin-page {
+  flex: 1;
+  width: 100%;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+.admin-page__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.admin-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-page__title {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  color: #2d2640;
+}
+
+.admin-page__subtitle,
+.admin-page__meta {
+  margin: 0.35rem 0 0;
+  color: #6b6483;
+}
+
+.admin-page__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.admin-summary__item {
+  background: #fff;
+  border: 1px solid rgba(124, 58, 237, 0.14);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+}
+
+.admin-summary__label {
+  margin: 0;
+  color: #6b6483;
+  font-size: 0.86rem;
+}
+
+.admin-summary__value {
+  margin: 0.35rem 0 0;
+  font-weight: 800;
+  color: #2d2640;
+  font-size: 1.45rem;
+}
+
+.admin-page__error {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.admin-page__empty {
+  color: #6b6483;
+  font-weight: 600;
+}
+
+.admin-company {
+  margin-top: 1rem;
+  border: 1px solid rgba(124, 58, 237, 0.14);
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.admin-company__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.admin-company__title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #2d2640;
+}
+
+.admin-company__count {
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.12);
+  color: #5b21b6;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-company__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.35rem 1rem;
+  padding: 0.85rem 1rem;
+}
+
+.admin-company__metrics p {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.admin-company__empty {
+  margin: 0;
+  padding: 0.9rem 1rem 1rem;
+  color: #6b6483;
+  font-weight: 600;
+}
+
+.admin-company__table-wrap {
+  overflow: auto;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.admin-company__table {
+  width: 100%;
+  min-width: 1100px;
+  border-collapse: collapse;
+}
+
+.admin-company__table th,
+.admin-company__table td {
+  padding: 0.6rem 0.7rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  text-align: left;
+  font-size: 0.84rem;
+  vertical-align: top;
+  color: #2d2640;
+  line-height: 1.35;
+}
+
+.admin-company__table th {
+  position: sticky;
+  top: 0;
+  background: #f9f7ff;
+  z-index: 1;
+  font-weight: 800;
+}
+
+@media (max-width: 780px) {
+  .admin-page {
+    padding: 1rem 1rem 2.5rem;
+  }
+
+  .admin-page__header {
+    flex-direction: column;
+  }
+
+  .admin-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .no-print,
+  .site-header,
+  .site-footer {
+    display: none !important;
+  }
+
+  .admin-page {
+    padding: 0;
+  }
+
+  .admin-company {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-top: 0.75rem;
+  }
+}

@@ -2,7 +2,9 @@ import { Link, Route, Routes } from 'react-router-dom'
 import bannerLogoImg from './assets/ratemypopup.png'
 import { AuthMenu } from './auth/AuthMenu.jsx'
 import { RequireAuth } from './auth/RequireAuth.jsx'
+import { RequireAdmin } from './auth/RequireAdmin.jsx'
 import { IconBuilding, IconSearch, IconStarOutline } from './components/Icons.jsx'
+import AdminPage from './pages/AdminPage.jsx'
 import BusinessPage from './pages/BusinessPage.jsx'
 import CompanyPage from './pages/CompanyPage.jsx'
 import ExplorePage from './pages/ExplorePage.jsx'
@@ -77,6 +79,17 @@ export default function App() {
             }
           />
           <Route path="/business" element={<BusinessPage />} />
+          <Route
+            path="/admin"
+            element={
+              <RequireAdmin
+                title="Admin sign-in required"
+                description="Use the RateMyPopUp admin account to access reporting and PDF export."
+              >
+                <AdminPage />
+              </RequireAdmin>
+            }
+          />
         </Routes>
       </main>
 
