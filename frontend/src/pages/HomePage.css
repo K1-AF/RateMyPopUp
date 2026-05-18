@@ -214,15 +214,9 @@
   );
 }
 
-.home-page .browse-section,
-.home-page .live-section,
 .home-page .leaderboard-section,
 .home-page .stats {
   background: transparent;
-}
-
-.home-page .browse-section {
-  border-top: none;
 }
 
 .home-page .stats {
