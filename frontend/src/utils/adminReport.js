@@ -1,15 +1,49 @@
 import { parseMultiField } from './reviews.js'
 import { supabase } from './supabase.js'
 
-function avg(values) {
+export function avg(values) {
   const nums = values.filter((n) => Number.isFinite(n))
   if (!nums.length) return null
   return nums.reduce((a, b) => a + b, 0) / nums.length
 }
 
-function pct(part, total) {
+export function pct(part, total) {
   if (!total) return null
   return (part / total) * 100
+}
+
+/**
+ * Recompute summary + sorted reviews for one company (used after date filters).
+ */
+export function summarizeCompanyReviews(reviews) {
+  const sorted = [...(reviews || [])].sort((a, b) => {
+    const da = new Date(a.date || 0).getTime()
+    const db = new Date(b.date || 0).getTime()
+    return db - da
+  })
+  const reviewCount = sorted.length
+  const vibeAvg = avg(sorted.map((r) => r.vibe || null))
+  const queueAvg = avg(sorted.map((r) => r.queueSpeed || null))
+  const goodieAvg = avg(sorted.map((r) => r.goodieQuality || null))
+  const perceptionAvg = avg(sorted.map((r) => r.brandPerceptionLikert || null))
+  const overallAvg = avg([vibeAvg, queueAvg, goodieAvg].map((n) => (Number.isFinite(n) ? n : null)))
+  const purchases = sorted.filter((r) => r.purchasedAtPopup).length
+  const heardBefore = sorted.filter((r) => r.heardBrandBefore).length
+  const comments = sorted.filter((r) => String(r.comments || '').trim().length > 0).length
+  return {
+    reviews: sorted,
+    summary: {
+      reviewCount,
+      commentsCount: comments,
+      vibeAvg,
+      queueAvg,
+      goodieAvg,
+      perceptionAvg,
+      overallAvg,
+      purchaseRate: pct(purchases, reviewCount),
+      heardBeforeRate: pct(heardBefore, reviewCount),
+    },
+  }
 }
 
 /**
@@ -65,38 +99,11 @@ function buildCompanyReport(rows) {
 
   const companies = Array.from(byCompany.values())
     .map((company) => {
-      const reviews = company.reviews.sort((a, b) => {
-        const da = new Date(a.date || 0).getTime()
-        const db = new Date(b.date || 0).getTime()
-        return db - da
-      })
-      const reviewCount = reviews.length
-
-      const vibeAvg = avg(reviews.map((r) => r.vibe || null))
-      const queueAvg = avg(reviews.map((r) => r.queueSpeed || null))
-      const goodieAvg = avg(reviews.map((r) => r.goodieQuality || null))
-      const perceptionAvg = avg(reviews.map((r) => r.brandPerceptionLikert || null))
-      const overallAvg = avg([vibeAvg, queueAvg, goodieAvg].map((n) => (Number.isFinite(n) ? n : null)))
-
-      const purchases = reviews.filter((r) => r.purchasedAtPopup).length
-      const heardBefore = reviews.filter((r) => r.heardBrandBefore).length
-
-      const comments = reviews.filter((r) => r.comments.trim().length > 0).length
-
+      const { reviews, summary } = summarizeCompanyReviews(company.reviews)
       return {
         ...company,
         reviews,
-        summary: {
-          reviewCount,
-          commentsCount: comments,
-          vibeAvg,
-          queueAvg,
-          goodieAvg,
-          perceptionAvg,
-          overallAvg,
-          purchaseRate: pct(purchases, reviewCount),
-          heardBeforeRate: pct(heardBefore, reviewCount),
-        },
+        summary,
       }
     })
     .sort((a, b) => b.summary.reviewCount - a.summary.reviewCount || a.companyName.localeCompare(b.companyName))
