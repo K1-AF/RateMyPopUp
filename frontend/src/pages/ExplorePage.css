@@ -124,6 +124,8 @@
   min-height: 3.35rem;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   text-decoration: none;
   transition: border-color 150ms ease, background 150ms ease, transform 120ms ease;
 }
@@ -146,4 +148,17 @@
   margin: 0;
   color: #2d2640;
   font-weight: 600;
+}
+
+.explore-card__badge {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(233, 30, 140, 0.1);
+  color: #be185d;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }

@@ -409,6 +409,31 @@
   background: #ffffff;
 }
 
+.footer-legal {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1.25rem;
+  margin-bottom: 0.65rem;
+}
+
+.footer-legal__link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b6483;
+  text-decoration: none;
+}
+
+.footer-legal__link:hover {
+  color: #e91e8c;
+}
+
+.footer-legal__link:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .footer-copy {
   margin: 0;
   font-size: 0.85rem;

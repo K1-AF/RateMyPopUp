@@ -1,93 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { fetchRecentReviews, getProofDisplayUrl, parseMultiField } from '../utils/reviews.js'
+import { getHardcodedReviews } from '../data/hardcodedReviews.js'
 import './RecentReviewsCarousel.css'
 
-/**
- * RecentReviewsCarousel
- *
- * Renders a carousel of community reviews. Right now the data is hardcoded
- * (see REVIEWS_SEED) so the page has something to show before the Supabase
- * backend is wired in. The shape mirrors the ReviewPage form fields:
- *   - company        (string)   event / pop-up name
- *   - createdAt      (ISO date) used to sort "most recent first"
- *   - reviewer       (string)   display name (first name + last initial)
- *   - ratings        (1-5 each) vibe, queue, goodieQuality
- *   - secured        (string[]) chips picked in the form
- *   - visitMain      (string[]) why they went
- *   - hearAbout      (string)   discovery channel
- *   - comments       (string)   free text
- *
- * Security notes:
- * - All strings are rendered as text (React escapes by default) — no HTML
- *   is injected from review content.
- * - Auto-rotation pauses on hover / keyboard focus so screen-reader users
- *   aren't fighting the timer.
- */
-
 const SLIDE_MS = 6500
-
-const REVIEWS_SEED = [
-  {
-    id: 'r-ordinary',
-    company: 'The Ordinary Immersive Experience',
-    createdAt: '2026-04-18T10:15:00Z',
-    reviewer: 'Maya R.',
-    ratings: { vibe: 5, queue: 4, goodie: 5 },
-    secured: ['Full product', 'Sample', 'Sticker'],
-    visitMain: ['Freebies', 'Photos'],
-    hearAbout: 'Instagram',
-    comments:
-      'Stunning build-out and the coffee cups were such a clever touch. Staff were lovely and I walked away with a full-size serum — 10/10.',
-  },
-  {
-    id: 'r-laneige',
-    company: 'Laneige x Boots | The Juice Pop Party',
-    createdAt: '2026-04-16T17:40:00Z',
-    reviewer: 'Priya S.',
-    ratings: { vibe: 5, queue: 3, goodie: 4 },
-    secured: ['Goodie bag', 'Drink/Food', 'Photo opportunity'],
-    visitMain: ['Freebies', 'In the area'],
-    hearAbout: 'TikTok',
-    comments:
-      'Queue moved faster than expected and the juice bar photo wall was a vibe. Goodie bag had a full lip sleeping mask!',
-  },
-  {
-    id: 'r-kayali',
-    company: 'KAYALI The Experience',
-    createdAt: '2026-04-14T12:05:00Z',
-    reviewer: 'Jess T.',
-    ratings: { vibe: 5, queue: 4, goodie: 4 },
-    secured: ['Sample', 'Tote bag', 'Photo opportunity'],
-    visitMain: ['Photos', 'Shopping'],
-    hearAbout: 'Friend',
-    comments:
-      'The neon set piece is iconic. Got three perfume samples and a tote. Would’ve loved a full bottle draw but otherwise flawless.',
-  },
-  {
-    id: 'r-prada',
-    company: 'The Prada Picnic',
-    createdAt: '2026-04-11T09:30:00Z',
-    reviewer: 'Ava L.',
-    ratings: { vibe: 5, queue: 2, goodie: 3 },
-    secured: ['Photo opportunity', 'Drink/Food'],
-    visitMain: ['Photos', 'In the area'],
-    hearAbout: 'Walk-by',
-    comments:
-      'Aesthetic dream but the line was no joke — got in after ~40 minutes. The macarons and set design made it worth it.',
-  },
-  {
-    id: 'r-lush',
-    company: 'Lush Wellness Lounge',
-    createdAt: '2026-04-08T15:50:00Z',
-    reviewer: 'Noor K.',
-    ratings: { vibe: 4, queue: 5, goodie: 4 },
-    secured: ['Sample', 'Full product'],
-    visitMain: ['Shopping', 'In the area'],
-    hearAbout: 'Newsletter',
-    comments:
-      'Calm, spa-like corner of the shop. Walked in, got a hand massage, left with a bath bomb. Very low-queue, very high-vibe.',
-  },
-]
 
 function formatDate(iso) {
   try {
@@ -129,119 +44,11 @@ function StarRow({ label, value }) {
   )
 }
 
-/**
- * Maps a Supabase review row into the shape the card expects.
- * Keeps the rest of the component agnostic to the on-disk schema.
- */
-function adaptRow(row) {
-  return {
-    id: row.review_id,
-    company: row.company?.company_name || 'Unknown pop-up',
-    createdAt: row.date,
-    reviewer: row.account?.display_name || 'Anonymous',
-    ratings: {
-      vibe: row.vibe ?? 0,
-      queue: row.queue_speed ?? 0,
-      goodie: row.goodie_bag_quality ?? 0,
-    },
-    secured: parseMultiField(row.items_secured),
-    visitMain: parseMultiField(row.reason_visit),
-    hearAbout: row.hear_about || '',
-    comments: row.comments || '',
-    proofUrl: row.proofUrl ?? getProofDisplayUrl(row.proof) ?? null,
-  }
-}
-
-/**
- * Collab submissions are stored as one review per company_id (same payload).
- * For home feed UX we collapse those sibling rows into one card and combine
- * names like "Nars x Refy" while preserving the newest-first ordering.
- */
-function collapseCollaborativeRows(rows) {
-  const grouped = new Map()
-  const order = []
-
-  for (const row of rows ?? []) {
-    const key = [
-      row.account_id ?? '',
-      row.date ?? '',
-      row.vibe ?? '',
-      row.queue_speed ?? '',
-      row.goodie_bag_quality ?? '',
-      row.items_secured ?? '',
-      row.reason_visit ?? '',
-      row.hear_about ?? '',
-      row.comments ?? '',
-    ].join('|')
-
-    const companyName = row.company?.company_name
-      ? String(row.company.company_name).trim()
-      : ''
-
-    if (!grouped.has(key)) {
-      grouped.set(key, {
-        ...row,
-        _companies: companyName ? [companyName] : [],
-      })
-      order.push(key)
-      continue
-    }
-
-    const bucket = grouped.get(key)
-    if (companyName && !bucket._companies.includes(companyName)) {
-      bucket._companies.push(companyName)
-    }
-    if (!bucket.proof && row.proof) {
-      bucket.proof = row.proof
-    }
-  }
-
-  return order.map((key) => {
-    const row = grouped.get(key)
-    const names = [...(row._companies ?? [])].sort((a, b) =>
-      a.localeCompare(b)
-    )
-    const combinedName = names.length > 0 ? names.join(' x ') : row.company?.company_name
-    return {
-      ...row,
-      company: { ...(row.company ?? {}), company_name: combinedName || 'Unknown pop-up' },
-    }
-  })
-}
-
 export function RecentReviewsCarousel() {
-  const seed = useMemo(
-    () =>
-      [...REVIEWS_SEED].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ),
-    []
-  )
-
-  const [reviews, setReviews] = useState(seed)
+  const reviews = useMemo(() => getHardcodedReviews(6), [])
   const [active, setActive] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
-  const [proofHidden, setProofHidden] = useState({})
   const wrapperRef = useRef(null)
-
-  useEffect(() => {
-    let cancelled = false
-    fetchRecentReviews(30)
-      .then((rows) => {
-        if (cancelled) return
-        if (!rows || rows.length === 0) return // keep seed fallback
-        const collapsed = collapseCollaborativeRows(rows).slice(0, 10)
-        const mapped = collapsed.map(adaptRow)
-        setReviews(mapped)
-        setActive(0)
-      })
-      .catch((err) => {
-        console.warn('[home] failed to load reviews:', err?.message)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   useEffect(() => {
     if (reviews.length < 2 || isPaused) return undefined
@@ -256,7 +63,6 @@ export function RecentReviewsCarousel() {
   }
 
   const activeReview = reviews[active]
-  const showProof = Boolean(activeReview.proofUrl) && !proofHidden[activeReview.id]
 
   return (
     <section
@@ -314,26 +120,11 @@ export function RecentReviewsCarousel() {
               <StarRow label="Goodie bag" value={activeReview.ratings.goodie} />
             </div>
 
-            {showProof ? (
-              <figure className="recent-review__photo">
-                <img
-                  src={activeReview.proofUrl}
-                  alt={`Photo from ${activeReview.reviewer}'s visit to ${activeReview.company}`}
-                  className="recent-review__photo-img"
-                  loading="lazy"
-                  decoding="async"
-                  onError={() =>
-                    setProofHidden((prev) => ({ ...prev, [activeReview.id]: true }))
-                  }
-                />
-              </figure>
-            ) : null}
-
-            {activeReview.comments && (
+            {activeReview.comments ? (
               <p className="recent-review__comments">
                 “{activeReview.comments}”
               </p>
-            )}
+            ) : null}
 
             <div className="recent-review__chips-group">
               <p className="recent-review__chips-label">Secured:</p>

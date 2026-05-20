@@ -5,6 +5,10 @@ import { AuthMenu } from './auth/AuthMenu.jsx'
 import { RequireAuth } from './auth/RequireAuth.jsx'
 import { RequireAdmin } from './auth/RequireAdmin.jsx'
 import { IconBuilding, IconSearch, IconStarOutline } from './components/Icons.jsx'
+import PrivacyPage from './pages/PrivacyPage.jsx'
+import TermsPage from './pages/TermsPage.jsx'
+import CookiesPage from './pages/CookiesPage.jsx'
+import BugReportPage from './pages/BugReportPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import BusinessPage from './pages/BusinessPage.jsx'
@@ -82,6 +86,10 @@ export default function App() {
             }
           />
           <Route path="/business" element={<BusinessPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/cookies" element={<CookiesPage />} />
+          <Route path="/bugs" element={<BugReportPage />} />
           <Route
             path="/admin"
             element={
@@ -108,6 +116,20 @@ export default function App() {
       </main>
 
       <footer className="site-footer">
+        <nav className="footer-legal" aria-label="Legal">
+          <Link to="/privacy" className="footer-legal__link">
+            Privacy
+          </Link>
+          <Link to="/terms" className="footer-legal__link">
+            Terms
+          </Link>
+          <Link to="/cookies" className="footer-legal__link">
+            Cookies
+          </Link>
+          <Link to="/bugs" className="footer-legal__link">
+            Bugs?
+          </Link>
+        </nav>
         <p className="footer-copy">© {new Date().getFullYear()} RateMyPopUp</p>
       </footer>
     </div>

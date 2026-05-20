@@ -10,6 +10,7 @@ import {
   uploadReviewProof,
   validateProofImage,
 } from '../utils/reviews.js'
+import { buildCollabCompanyName } from '../utils/companies.js'
 import './ReviewPage.css'
 
 const SECURE_OPTIONS = [
@@ -43,6 +44,15 @@ const BRAND_PERCEPTION_LIKERT = [
   { value: 3, label: 'Neutral' },
   { value: 4, label: 'Agree' },
   { value: 5, label: 'Strongly agree' },
+]
+
+/** 5-point scale for online purchase intent (stored as 1–5 in `online_purchase_likert`). */
+const ONLINE_PURCHASE_LIKERT = [
+  { value: 1, label: 'Very unlikely' },
+  { value: 2, label: 'Unlikely' },
+  { value: 3, label: 'Neutral' },
+  { value: 4, label: 'Likely' },
+  { value: 5, label: 'Very likely' },
 ]
 
 /** Matches DB `attended_with` CHECK (lowercase). */
@@ -120,6 +130,7 @@ export default function ReviewPage() {
   const [vibe, setVibe] = useState(0)
   const [queue, setQueue] = useState(0)
   const [goodieQuality, setGoodieQuality] = useState(0)
+  const [staffHelpfulness, setStaffHelpfulness] = useState(0)
   const [visitMain, setVisitMain] = useState(() => new Set())
   const [hearAbout, setHearAbout] = useState('')
   const [securedOther, setSecuredOther] = useState('')
@@ -134,6 +145,8 @@ export default function ReviewPage() {
   const [errors, setErrors] = useState({})
   /** 0 = none selected; 1–5 = Likert score for brand perception. */
   const [brandPerceptionLikert, setBrandPerceptionLikert] = useState(0)
+  /** 0 = none selected; 1–5 = likelihood of buying online after the visit. */
+  const [onlinePurchaseLikert, setOnlinePurchaseLikert] = useState(0)
   /** null until user picks Yes or No */
   const [purchasedAtPopup, setPurchasedAtPopup] = useState(null)
   const [heardBrandBefore, setHeardBrandBefore] = useState(null)
@@ -336,6 +349,9 @@ export default function ReviewPage() {
     if (goodieQuality < 1) {
       e.goodie = 'Rate item obtained quality.'
     }
+    if (staffHelpfulness < 1) {
+      e.staff = 'Rate how helpful the staff were.'
+    }
     if (visitMain.size === 0) {
       e.visitMain = 'Select at least one main reason for visiting.'
     } else if (visitMain.has('Other') && !visitMainOther.trim()) {
@@ -349,6 +365,10 @@ export default function ReviewPage() {
     if (brandPerceptionLikert < 1 || brandPerceptionLikert > 5) {
       e.brandPerception =
         'Please rate whether this experience improved your perception of the brand.'
+    }
+    if (onlinePurchaseLikert < 1 || onlinePurchaseLikert > 5) {
+      e.onlinePurchase =
+        'Please rate how likely you are to buy from this brand online after today.'
     }
     if (purchasedAtPopup !== true && purchasedAtPopup !== false) {
       e.purchasedAtPopup = 'Please say whether you made a purchase at this pop-up.'
@@ -367,11 +387,13 @@ export default function ReviewPage() {
     vibe,
     queue,
     goodieQuality,
+    staffHelpfulness,
     visitMain,
     visitMainOther,
     hearAbout,
     hearAboutOther,
     brandPerceptionLikert,
+    onlinePurchaseLikert,
     purchasedAtPopup,
     heardBrandBefore,
     attendedWith,
@@ -402,6 +424,10 @@ export default function ReviewPage() {
       document.getElementById('rating-goodie')?.querySelector('button')?.focus()
       return
     }
+    if (e.staff) {
+      document.getElementById('rating-staff')?.querySelector('button')?.focus()
+      return
+    }
     if (e.visitMain) {
       document.getElementById('visit-main-first')?.focus()
       return
@@ -420,6 +446,10 @@ export default function ReviewPage() {
     }
     if (e.brandPerception) {
       document.getElementById('likert-first')?.focus()
+      return
+    }
+    if (e.onlinePurchase) {
+      document.getElementById('online-purchase-likert-first')?.focus()
       return
     }
     if (e.purchasedAtPopup) {
@@ -460,17 +490,12 @@ export default function ReviewPage() {
 
     setSubmitting(true)
     try {
-      // Resolve every selected collaborator to a canonical company uuid.
-      const resolvedCompanyIds = []
-      for (const company of companiesToSubmit) {
-        const companyId = company.id ?? (await getOrCreateCompanyId(company.name))
-        if (!resolvedCompanyIds.includes(companyId)) {
-          resolvedCompanyIds.push(companyId)
-        }
-      }
-      if (resolvedCompanyIds.length === 0) {
+      const collabName = buildCollabCompanyName(companiesToSubmit.map((c) => c.name))
+      if (!collabName) {
         throw new Error('Please add at least one company before submitting.')
       }
+
+      const companyId = await getOrCreateCompanyId(collabName)
 
       // Serialize multi-select chips (existing columns are varchar).
       const securedPayload = [
@@ -490,53 +515,50 @@ export default function ReviewPage() {
           ? `Other: ${hearAboutOther.trim().slice(0, MAX_OTHER_TEXT)}`
           : hearAbout
 
-      // Keep one shared timestamp across all collaborator rows so the home
-      // feed can collapse them into a single combined card.
       const submittedAt = new Date().toISOString()
-      let createdCount = 0
       let proofAttached = false
-      for (const companyId of resolvedCompanyIds) {
-        const review = await insertReview({
-          account_id: user.id,
-          company_id: companyId,
-          items_secured: JSON.stringify(securedPayload),
-          vibe,
-          queue_speed: queue,
-          goodie_bag_quality: goodieQuality,
-          reason_visit: JSON.stringify(visitPayload),
-          hear_about: hearAboutPayload,
-          comments: comments.trim() || null,
-          proof: null,
-          date: submittedAt,
-          brand_perception_likert: brandPerceptionLikert,
-          purchased_at_popup: purchasedAtPopup,
-          heard_brand_before: heardBrandBefore,
-          attended_with: attendedWith,
-        })
-        createdCount += 1
 
-        if (proofFile && !proofAttached) {
-          try {
-            const proofMeta = await uploadReviewProof({
-              file: proofFile,
-              userId: user.id,
-              reviewId: review.review_id,
-            })
-            if (proofMeta) {
-              await attachProofToReview(review.review_id, proofMeta)
-              proofAttached = true
-            }
-          } catch (uploadErr) {
-            console.warn('[review] proof upload failed:', uploadErr?.message)
-            setSubmitError(
-              uploadErr?.message ||
-                'Your review was saved, but the photo could not be uploaded. Try again without a photo or re-submit later.'
-            )
+      const review = await insertReview({
+        account_id: user.id,
+        company_id: companyId,
+        items_secured: JSON.stringify(securedPayload),
+        vibe,
+        queue_speed: queue,
+        goodie_bag_quality: goodieQuality,
+        staff_helpfulness: staffHelpfulness,
+        reason_visit: JSON.stringify(visitPayload),
+        hear_about: hearAboutPayload,
+        comments: comments.trim() || null,
+        proof: null,
+        date: submittedAt,
+        brand_perception_likert: brandPerceptionLikert,
+        online_purchase_likert: onlinePurchaseLikert,
+        purchased_at_popup: purchasedAtPopup,
+        heard_brand_before: heardBrandBefore,
+        attended_with: attendedWith,
+      })
+
+      if (proofFile && !proofAttached) {
+        try {
+          const proofMeta = await uploadReviewProof({
+            file: proofFile,
+            userId: user.id,
+            reviewId: review.review_id,
+          })
+          if (proofMeta) {
+            await attachProofToReview(review.review_id, proofMeta)
+            proofAttached = true
           }
+        } catch (uploadErr) {
+          console.warn('[review] proof upload failed:', uploadErr?.message)
+          setSubmitError(
+            uploadErr?.message ||
+              'Your review was saved, but the photo could not be uploaded. Try again without a photo or re-submit later.'
+          )
         }
       }
 
-      setSubmittedCount(createdCount)
+      setSubmittedCount(1)
       setSubmitSuccess(true)
     } catch (err) {
       setSubmitError(err?.message || 'Something went wrong. Please try again.')
@@ -610,7 +632,7 @@ export default function ReviewPage() {
               />
             </div>
             <p className="review-company-hint">
-              Press Enter after typing, or pick an existing company. Remove by clicking.
+              Pick individual brands from search, if collabed then add all companies involved.
             </p>
             {selectedCompanies.length > 0 ? (
               <ul className="review-company-list" aria-label="Selected companies">
@@ -739,6 +761,17 @@ export default function ReviewPage() {
               }}
               required
               error={errors.goodie}
+            />
+            <StarRating
+              id="rating-staff"
+              label="How helpful were the staff?"
+              value={staffHelpfulness}
+              onChange={(v) => {
+                setStaffHelpfulness(v)
+                clearError('staff')
+              }}
+              required
+              error={errors.staff}
             />
           </div>
 
@@ -925,6 +958,66 @@ export default function ReviewPage() {
             {errors.brandPerception ? (
               <p className="review-field__error" role="alert">
                 {errors.brandPerception}
+              </p>
+            ) : null}
+          </fieldset>
+
+          <fieldset
+            className={`review-field review-likert-scale-field ${errors.onlinePurchase ? 'review-field--invalid' : ''}`}
+          >
+            <legend className="review-field__label">
+              How likely are you to buy from this brand online after today?{' '}
+              <abbr className="review-required" title="required">
+                *
+              </abbr>
+            </legend>
+            <p className="review-likert-scale__hints">
+              <span>Very unlikely</span>
+              <span>Very likely</span>
+            </p>
+            <div
+              className="review-likert-scale"
+              role="radiogroup"
+              aria-label="Likelihood of buying from this brand online after today"
+              aria-required="true"
+            >
+              <div className="review-likert-scale__nodes">
+                {ONLINE_PURCHASE_LIKERT.map((opt, i) => (
+                  <Fragment key={opt.value}>
+                    <div className="review-likert-scale__step">
+                      <button
+                        type="button"
+                        id={i === 0 ? 'online-purchase-likert-first' : undefined}
+                        role="radio"
+                        aria-checked={onlinePurchaseLikert === opt.value}
+                        aria-label={`${opt.label} (${opt.value} of 5)`}
+                        className={`review-likert-scale__node ${onlinePurchaseLikert === opt.value ? 'is-selected' : ''}`}
+                        onClick={() => {
+                          setOnlinePurchaseLikert(opt.value)
+                          clearError('onlinePurchase')
+                        }}
+                      >
+                        <span className="review-likert-scale__node-value">{opt.value}</span>
+                      </button>
+                    </div>
+                    {i < ONLINE_PURCHASE_LIKERT.length - 1 ? (
+                      <div
+                        className={`review-likert-scale__connector ${onlinePurchaseLikert > i + 1 ? 'is-filled' : ''}`}
+                        aria-hidden
+                      />
+                    ) : null}
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+            <p className="review-likert-scale__current" aria-live="polite">
+              {onlinePurchaseLikert >= 1 && onlinePurchaseLikert <= 5
+                ? ONLINE_PURCHASE_LIKERT.find((o) => o.value === onlinePurchaseLikert)?.label
+                : '\u00a0'}
+            </p>
+            {errors.onlinePurchase ? (
+              <p className="review-field__error" role="alert">
+                {errors.onlinePurchase}
               </p>
             ) : null}
           </fieldset>

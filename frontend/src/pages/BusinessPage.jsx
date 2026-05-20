@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  IconBuilding,
   IconChartBars,
+  IconPeople,
   IconStarOutline,
 } from '../components/Icons.jsx'
 import './BusinessPage.css'
@@ -23,8 +23,8 @@ const FEATURES = [
   {
     id: 'audience',
     title: 'Audience Signals',
-    body: 'Understand who shows up and what keeps them coming back.',
-    icon: IconBuilding,
+    body: 'Know who shows up — and why they keep coming back.',
+    icon: IconPeople,
   },
 ]
 
@@ -49,11 +49,10 @@ export default function BusinessPage() {
 
         <header className="business-hero">
           <div className="business-hero__copy">
-            <p className="business-hero__eyebrow">For pop-up operators</p>
             <h1 className="business-hero__title">Business owner?</h1>
             <p className="business-hero__lead">
               Track what attendees loved, where the queue lost momentum, and
-              which freebies actually moved the room.
+              what makes you stand out.
             </p>
           </div>
 

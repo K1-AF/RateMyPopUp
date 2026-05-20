@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { IconSearch, IconStarOutline } from '../components/Icons.jsx'
 import { fetchCompanies } from '../utils/reviews.js'
+import { isCollabCompanyName } from '../utils/companies.js'
 import './ExplorePage.css'
 
 const SEARCH_DEBOUNCE_MS = 220
@@ -35,7 +36,7 @@ export default function ExplorePage() {
         })
         .catch((err) => {
           if (cancelled) return
-          setError(err?.message || 'Could not load companies right now.')
+          setError(err?.message || 'Could not load pop-ups right now.')
           setCompanies([])
         })
         .finally(() => {
@@ -54,7 +55,7 @@ export default function ExplorePage() {
       <div className="explore-page__inner">
         <header className="explore-page__header">
           <h1 id="explore-title" className="explore-page__title">
-            Explore companies
+            Explore pop-ups
           </h1>
         </header>
 
@@ -107,6 +108,9 @@ export default function ExplorePage() {
                   className="explore-card"
                 >
                   <p className="explore-card__name">{company.company_name}</p>
+                  {isCollabCompanyName(company.company_name) ? (
+                    <p className="explore-card__badge">Collab</p>
+                  ) : null}
                 </Link>
               </li>
             ))}

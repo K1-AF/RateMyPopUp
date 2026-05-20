@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js'
+import { isCollabCompanyName } from './companies.js'
 
 /**
  * Data-access helpers for the `review` / `company` tables.
@@ -12,8 +13,10 @@ import { supabase } from './supabase.js'
  * - We serialize array fields (items_secured, reason_visit) as JSON text
  *   because the existing columns are `varchar`. Readers should JSON.parse
  *   with a try/catch and fall back to splitting on comma.
- * - Experience extras: brand_perception_likert (1–5), purchased_at_popup,
- *   heard_brand_before, attended_with — see migration 0004_review_experience_questions.sql
+ * - Experience extras: brand_perception_likert (1–5), online_purchase_likert (1–5),
+ *   purchased_at_popup, heard_brand_before, attended_with — see migrations
+ *   0004_review_experience_questions.sql, 0007_online_purchase_likert.sql, and
+ *   0008_staff_helpfulness.sql
  */
 
 export const PROOF_BUCKET = 'review-proofs'
@@ -163,8 +166,8 @@ function escapeIlike(value) {
 
 /**
  * Typeahead search over companies. Case-insensitive substring match.
- * Safe to call on every keystroke — we escape wildcards and hard-cap the
- * returned rows, and RLS limits visibility to what the user can already see.
+ * Collab companies (names containing " x ") are excluded so reviewers pick
+ * individual brands; collab rows are merged on submit instead.
  */
 export async function searchCompanies(query, limit = 8) {
   const trimmed = (query ?? '').trim()
@@ -174,10 +177,11 @@ export async function searchCompanies(query, limit = 8) {
     .from('company')
     .select('company_id, company_name')
     .ilike('company_name', `%${escaped}%`)
+    .not('company_name', 'ilike', '% x %')
     .order('company_name', { ascending: true })
     .limit(Math.max(1, Math.min(20, limit)))
   if (error) throw new Error(error.message || 'Failed to search companies')
-  return data ?? []
+  return (data ?? []).filter((row) => !isCollabCompanyName(row.company_name))
 }
 
 /**
