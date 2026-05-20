@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from './AuthContext.jsx'
 import { GoogleSignInButton } from './GoogleSignInButton.jsx'
 
@@ -85,6 +86,14 @@ export function AuthMenu() {
               <p className="auth-menu__email">{user.email}</p>
             )}
           </div>
+          <Link
+            to="/account"
+            className="auth-menu__link"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+          >
+            My reviews
+          </Link>
           <button
             type="button"
             className="auth-menu__signout"

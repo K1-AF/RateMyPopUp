@@ -185,6 +185,27 @@
   word-break: break-all;
 }
 
+.auth-menu__link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #4a435f;
+  text-decoration: none;
+}
+
+.auth-menu__link:hover,
+.auth-menu__link:focus-visible {
+  background: rgba(124, 58, 237, 0.08);
+  color: #7c3aed;
+  outline: none;
+}
+
 .auth-menu__signout {
   display: block;
   width: 100%;

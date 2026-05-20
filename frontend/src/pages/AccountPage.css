@@ -1,0 +1,434 @@
+.account-page {
+  flex: 1;
+  width: 100%;
+  padding: 1.5rem 1.25rem 3rem;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(233, 30, 140, 0.05), transparent 24rem),
+    #ffffff;
+}
+
+.account-page__inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.account-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(92, 85, 104, 0.14);
+}
+
+.account-page__title {
+  margin: 0 0 0.25rem;
+  font-size: clamp(1.65rem, 3vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-dark, #2d2640);
+}
+
+.account-page__subtitle {
+  margin: 0;
+  color: #6b6483;
+  font-size: 0.95rem;
+}
+
+.account-page__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.1rem;
+  border-radius: 999px;
+  background: #e91e8c;
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(233, 30, 140, 0.28);
+}
+
+.account-page__cta:hover {
+  background: #d9157e;
+}
+
+.account-page__cta:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}
+
+.account-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .account-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.account-kpi {
+  padding: 1rem 0.85rem;
+  border: 1px solid rgba(124, 58, 237, 0.14);
+  border-radius: 14px;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(45, 38, 64, 0.04);
+}
+
+.account-kpi__value {
+  margin: 0 0 0.25rem;
+  font-size: clamp(1.35rem, 3vw, 1.65rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--brand-pink, #e91e8c);
+  line-height: 1.2;
+}
+
+.account-kpi__label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6b6483;
+  line-height: 1.35;
+}
+
+.account-page__state {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px dashed rgba(124, 58, 237, 0.2);
+  color: #6b6483;
+  text-align: center;
+}
+
+.account-page__state--error {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #b42318;
+  background: rgba(254, 226, 226, 0.35);
+}
+
+.account-page__empty {
+  display: grid;
+  gap: 0.85rem;
+  justify-items: start;
+  padding: 1.25rem;
+  border: 1px solid rgba(92, 85, 104, 0.14);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.account-page__empty p {
+  margin: 0;
+  color: #5c5568;
+}
+
+.account-review-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.account-review-card {
+  padding: 1.15rem 1.2rem;
+  border: 1px solid rgba(92, 85, 104, 0.16);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(45, 38, 64, 0.05);
+}
+
+.account-review-card__company {
+  margin: 0 0 0.2rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-dark, #2d2640);
+}
+
+.account-review-card__meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b6483;
+}
+
+.account-review-card__comments {
+  margin: 0.85rem 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #4a435f;
+}
+
+.account-review-card__comments--muted {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.account-review-card__ratings {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.account-review-card__ratings div {
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background: #faf7fc;
+  text-align: center;
+}
+
+.account-review-card__ratings dt {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8b8499;
+}
+
+.account-review-card__ratings dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #2d2640;
+}
+
+.account-review-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(92, 85, 104, 0.12);
+}
+
+.account-review-card__btn {
+  padding: 0.5rem 0.9rem;
+  border: 1px solid rgba(92, 85, 104, 0.22);
+  border-radius: 999px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #4a435f;
+  cursor: pointer;
+}
+
+.account-review-card__btn:hover {
+  border-color: rgba(124, 58, 237, 0.35);
+  color: #7c3aed;
+}
+
+.account-review-card__btn--danger {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #b42318;
+}
+
+.account-review-card__btn--danger:hover {
+  background: rgba(254, 226, 226, 0.45);
+}
+
+.account-review-card__btn:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}
+
+/* Inline editor */
+
+.account-review-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.account-review-editor__meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #8b8499;
+}
+
+.account-review-editor__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.account-review-editor__label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-dark, #2d2640);
+}
+
+.account-review-editor__input,
+.account-review-editor__textarea {
+  width: 100%;
+  border: 1px solid rgba(92, 85, 104, 0.26);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  font: inherit;
+  color: var(--text-dark, #2d2640);
+}
+
+.account-review-editor__textarea {
+  resize: vertical;
+  min-height: 5rem;
+}
+
+.account-review-editor__input:focus,
+.account-review-editor__textarea:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+
+.account-review-editor__input--error {
+  border-color: #ef4444;
+}
+
+.account-review-editor__stars {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.account-review-editor__error {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #b42318;
+}
+
+.account-review-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.account-review-editor__btn {
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.account-review-editor__btn--primary {
+  background: #e91e8c;
+  color: #fff;
+}
+
+.account-review-editor__btn--primary:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.account-review-editor__btn--ghost {
+  background: #fff;
+  border-color: rgba(92, 85, 104, 0.22);
+  color: #4a435f;
+}
+
+@media (max-width: 520px) {
+  .account-review-card__ratings {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Delete confirmation modal */
+
+.account-delete-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(45, 38, 64, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.account-delete-modal__dialog {
+  width: 100%;
+  max-width: 22rem;
+  padding: 1.35rem 1.4rem 1.25rem;
+  border-radius: 16px;
+  border: 1px solid rgba(92, 85, 104, 0.12);
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(45, 38, 64, 0.22);
+  text-align: center;
+}
+
+.account-delete-modal__title {
+  margin: 0 0 0.65rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-dark, #2d2640);
+  line-height: 1.35;
+}
+
+.account-delete-modal__text {
+  margin: 0 0 1.15rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #6b6483;
+}
+
+.account-delete-modal__text strong {
+  color: var(--text-dark, #2d2640);
+  font-weight: 700;
+}
+
+.account-delete-modal__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.account-delete-modal__btn {
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.account-delete-modal__btn:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.account-delete-modal__btn--yes {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.28);
+}
+
+.account-delete-modal__btn--yes:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.account-delete-modal__btn--no {
+  background: #fff;
+  border-color: rgba(92, 85, 104, 0.22);
+  color: #4a435f;
+}
+
+.account-delete-modal__btn--no:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: rgba(124, 58, 237, 0.28);
+  color: #7c3aed;
+}
+
+.account-delete-modal__btn:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}
