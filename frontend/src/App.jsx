@@ -9,6 +9,7 @@ import PrivacyPage from './pages/PrivacyPage.jsx'
 import TermsPage from './pages/TermsPage.jsx'
 import CookiesPage from './pages/CookiesPage.jsx'
 import BugReportPage from './pages/BugReportPage.jsx'
+import AccountPage from './pages/AccountPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import BusinessPage from './pages/BusinessPage.jsx'
@@ -90,6 +91,17 @@ export default function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/cookies" element={<CookiesPage />} />
           <Route path="/bugs" element={<BugReportPage />} />
+          <Route
+            path="/account"
+            element={
+              <RequireAuth
+                title="Sign in to view your account"
+                description="Sign in with Google to see and manage your reviews."
+              >
+                <AccountPage />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/admin"
             element={
