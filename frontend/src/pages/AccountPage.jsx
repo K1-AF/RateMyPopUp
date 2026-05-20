@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext.jsx'
 import {
@@ -7,6 +7,16 @@ import {
 } from '../components/AccountReviewEditor.jsx'
 import { deleteReview, fetchMyReviews } from '../utils/myReviews.js'
 import './AccountPage.css'
+
+function avgRating(values) {
+  const nums = values.filter((n) => Number.isFinite(n) && n > 0)
+  if (!nums.length) return null
+  return nums.reduce((sum, n) => sum + n, 0) / nums.length
+}
+
+function formatAvg(value) {
+  return value == null ? '—' : `${value.toFixed(1)}/5`
+}
 
 export default function AccountPage() {
   const { user } = useAuth()
@@ -22,6 +32,19 @@ export default function AccountPage() {
     user?.user_metadata?.name ||
     user?.email ||
     'Your account'
+
+  const stats = useMemo(() => {
+    const popUpsVisited = new Set(
+      reviews.map((r) => r.company_id).filter(Boolean)
+    ).size
+
+    return {
+      popUpsVisited,
+      avgVibe: avgRating(reviews.map((r) => Number(r.vibe))),
+      avgGoodie: avgRating(reviews.map((r) => Number(r.goodie_bag_quality))),
+      avgQueue: avgRating(reviews.map((r) => Number(r.queue_speed))),
+    }
+  }, [reviews])
 
   const loadReviews = useCallback(async () => {
     if (!user?.id) return
@@ -86,6 +109,35 @@ export default function AccountPage() {
             Write a review
           </Link>
         </header>
+
+        {!error ? (
+          <div className="account-kpis" aria-label="Your review stats">
+            <div className="account-kpi">
+              <p className="account-kpi__value">
+                {loading ? '…' : stats.popUpsVisited}
+              </p>
+              <p className="account-kpi__label">Pop-ups visited</p>
+            </div>
+            <div className="account-kpi">
+              <p className="account-kpi__value">
+                {loading ? '…' : formatAvg(stats.avgVibe)}
+              </p>
+              <p className="account-kpi__label">Avg vibe rating</p>
+            </div>
+            <div className="account-kpi">
+              <p className="account-kpi__value">
+                {loading ? '…' : formatAvg(stats.avgGoodie)}
+              </p>
+              <p className="account-kpi__label">Avg goodie bag</p>
+            </div>
+            <div className="account-kpi">
+              <p className="account-kpi__value">
+                {loading ? '…' : formatAvg(stats.avgQueue)}
+              </p>
+              <p className="account-kpi__label">Avg queue speed</p>
+            </div>
+          </div>
+        ) : null}
 
         {loading ? (
           <p className="account-page__state" role="status">
