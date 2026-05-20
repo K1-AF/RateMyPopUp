@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js'
+import { isCollabCompanyName } from './companies.js'
 
 /**
  * Data-access helpers for the `review` / `company` tables.
@@ -165,8 +166,8 @@ function escapeIlike(value) {
 
 /**
  * Typeahead search over companies. Case-insensitive substring match.
- * Safe to call on every keystroke — we escape wildcards and hard-cap the
- * returned rows, and RLS limits visibility to what the user can already see.
+ * Collab companies (names containing " x ") are excluded so reviewers pick
+ * individual brands; collab rows are merged on submit instead.
  */
 export async function searchCompanies(query, limit = 8) {
   const trimmed = (query ?? '').trim()
@@ -176,10 +177,11 @@ export async function searchCompanies(query, limit = 8) {
     .from('company')
     .select('company_id, company_name')
     .ilike('company_name', `%${escaped}%`)
+    .not('company_name', 'ilike', '% x %')
     .order('company_name', { ascending: true })
     .limit(Math.max(1, Math.min(20, limit)))
   if (error) throw new Error(error.message || 'Failed to search companies')
-  return data ?? []
+  return (data ?? []).filter((row) => !isCollabCompanyName(row.company_name))
 }
 
 /**

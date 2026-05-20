@@ -10,6 +10,7 @@ import {
   uploadReviewProof,
   validateProofImage,
 } from '../utils/reviews.js'
+import { buildCollabCompanyName } from '../utils/companies.js'
 import './ReviewPage.css'
 
 const SECURE_OPTIONS = [
@@ -489,17 +490,12 @@ export default function ReviewPage() {
 
     setSubmitting(true)
     try {
-      // Resolve every selected collaborator to a canonical company uuid.
-      const resolvedCompanyIds = []
-      for (const company of companiesToSubmit) {
-        const companyId = company.id ?? (await getOrCreateCompanyId(company.name))
-        if (!resolvedCompanyIds.includes(companyId)) {
-          resolvedCompanyIds.push(companyId)
-        }
-      }
-      if (resolvedCompanyIds.length === 0) {
+      const collabName = buildCollabCompanyName(companiesToSubmit.map((c) => c.name))
+      if (!collabName) {
         throw new Error('Please add at least one company before submitting.')
       }
+
+      const companyId = await getOrCreateCompanyId(collabName)
 
       // Serialize multi-select chips (existing columns are varchar).
       const securedPayload = [
@@ -519,55 +515,50 @@ export default function ReviewPage() {
           ? `Other: ${hearAboutOther.trim().slice(0, MAX_OTHER_TEXT)}`
           : hearAbout
 
-      // Keep one shared timestamp across all collaborator rows so the home
-      // feed can collapse them into a single combined card.
       const submittedAt = new Date().toISOString()
-      let createdCount = 0
       let proofAttached = false
-      for (const companyId of resolvedCompanyIds) {
-        const review = await insertReview({
-          account_id: user.id,
-          company_id: companyId,
-          items_secured: JSON.stringify(securedPayload),
-          vibe,
-          queue_speed: queue,
-          goodie_bag_quality: goodieQuality,
-          staff_helpfulness: staffHelpfulness,
-          reason_visit: JSON.stringify(visitPayload),
-          hear_about: hearAboutPayload,
-          comments: comments.trim() || null,
-          proof: null,
-          date: submittedAt,
-          brand_perception_likert: brandPerceptionLikert,
-          online_purchase_likert: onlinePurchaseLikert,
-          purchased_at_popup: purchasedAtPopup,
-          heard_brand_before: heardBrandBefore,
-          attended_with: attendedWith,
-        })
-        createdCount += 1
 
-        if (proofFile && !proofAttached) {
-          try {
-            const proofMeta = await uploadReviewProof({
-              file: proofFile,
-              userId: user.id,
-              reviewId: review.review_id,
-            })
-            if (proofMeta) {
-              await attachProofToReview(review.review_id, proofMeta)
-              proofAttached = true
-            }
-          } catch (uploadErr) {
-            console.warn('[review] proof upload failed:', uploadErr?.message)
-            setSubmitError(
-              uploadErr?.message ||
-                'Your review was saved, but the photo could not be uploaded. Try again without a photo or re-submit later.'
-            )
+      const review = await insertReview({
+        account_id: user.id,
+        company_id: companyId,
+        items_secured: JSON.stringify(securedPayload),
+        vibe,
+        queue_speed: queue,
+        goodie_bag_quality: goodieQuality,
+        staff_helpfulness: staffHelpfulness,
+        reason_visit: JSON.stringify(visitPayload),
+        hear_about: hearAboutPayload,
+        comments: comments.trim() || null,
+        proof: null,
+        date: submittedAt,
+        brand_perception_likert: brandPerceptionLikert,
+        online_purchase_likert: onlinePurchaseLikert,
+        purchased_at_popup: purchasedAtPopup,
+        heard_brand_before: heardBrandBefore,
+        attended_with: attendedWith,
+      })
+
+      if (proofFile && !proofAttached) {
+        try {
+          const proofMeta = await uploadReviewProof({
+            file: proofFile,
+            userId: user.id,
+            reviewId: review.review_id,
+          })
+          if (proofMeta) {
+            await attachProofToReview(review.review_id, proofMeta)
+            proofAttached = true
           }
+        } catch (uploadErr) {
+          console.warn('[review] proof upload failed:', uploadErr?.message)
+          setSubmitError(
+            uploadErr?.message ||
+              'Your review was saved, but the photo could not be uploaded. Try again without a photo or re-submit later.'
+          )
         }
       }
 
-      setSubmittedCount(createdCount)
+      setSubmittedCount(1)
       setSubmitSuccess(true)
     } catch (err) {
       setSubmitError(err?.message || 'Something went wrong. Please try again.')
@@ -641,7 +632,7 @@ export default function ReviewPage() {
               />
             </div>
             <p className="review-company-hint">
-              Press Enter after typing, or pick an existing company. Remove by clicking.
+              Pick individual brands from search, if collabed then add all companies involved.
             </p>
             {selectedCompanies.length > 0 ? (
               <ul className="review-company-list" aria-label="Selected companies">
