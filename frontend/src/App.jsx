@@ -8,6 +8,7 @@ import { IconBuilding, IconSearch, IconStarOutline } from './components/Icons.js
 import PrivacyPage from './pages/PrivacyPage.jsx'
 import TermsPage from './pages/TermsPage.jsx'
 import CookiesPage from './pages/CookiesPage.jsx'
+import BugReportPage from './pages/BugReportPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import BusinessPage from './pages/BusinessPage.jsx'
@@ -88,6 +89,7 @@ export default function App() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/cookies" element={<CookiesPage />} />
+          <Route path="/bugs" element={<BugReportPage />} />
           <Route
             path="/admin"
             element={
@@ -123,6 +125,9 @@ export default function App() {
           </Link>
           <Link to="/cookies" className="footer-legal__link">
             Cookies
+          </Link>
+          <Link to="/bugs" className="footer-legal__link">
+            Bugs?
           </Link>
         </nav>
         <p className="footer-copy">© {new Date().getFullYear()} RateMyPopUp</p>
