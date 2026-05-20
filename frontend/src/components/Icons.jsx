@@ -231,3 +231,88 @@ export function IconStarFilled({ className = '', ariaHidden = true }) {
     </svg>
   )
 }
+
+/** Connected nodes — community / network. */
+export function IconCommunity({ className = '', ariaHidden = true }) {
+  return (
+    <svg
+      className={className}
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden={ariaHidden}
+    >
+      <circle cx="12" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.75" />
+      <circle cx="5" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.75" />
+      <circle cx="19" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.75" />
+      <path
+        d="M12 7.5v3M9.2 16.5 10.6 13M14.8 16.5l-1.4-3.5"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/** Shield with check — trust / authenticity. */
+export function IconShieldCheck({ className = '', ariaHidden = true }) {
+  return (
+    <svg
+      className={className}
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden={ariaHidden}
+    >
+      <path
+        d="M12 3l7 3v5c0 4.2-2.8 7.8-7 9-4.2-1.2-7-4.8-7-9V6l7-3z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 12l2 2 4-4"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/** Person with check — verified real user. */
+export function IconUserCheck({ className = '', ariaHidden = true }) {
+  return (
+    <svg
+      className={className}
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden={ariaHidden}
+    >
+      <circle cx="10" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.75" />
+      <path
+        d="M4 20v-1a5 5 0 015-5h2a5 5 0 015 5v1"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <path
+        d="M17 11l2 2 4-4"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}

@@ -334,7 +334,7 @@ export default function HomePage() {
       <section className="hero" aria-label="Home">
         <div className="hero__inner">
           <p className="hero-description">
-            The #1 platform to find pop-up events, rate goodie bags, and share
+            The #1 platform to voice your experience, rate goodie bags, and share
             your haul with the community.
           </p>
 

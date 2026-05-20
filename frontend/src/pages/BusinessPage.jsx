@@ -2,8 +2,11 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   IconChartBars,
+  IconCommunity,
   IconPeople,
+  IconShieldCheck,
   IconStarOutline,
+  IconUserCheck,
 } from '../components/Icons.jsx'
 import './BusinessPage.css'
 
@@ -25,6 +28,27 @@ const FEATURES = [
     title: 'Audience Signals',
     body: 'Know who shows up — and why they keep coming back.',
     icon: IconPeople,
+  },
+]
+
+const WHY_US = [
+  {
+    id: 'community',
+    title: 'Strong community',
+    body: 'A growing network of pop-up lovers who show up, review, and tell friends what’s worth the queue.',
+    icon: IconCommunity,
+  },
+  {
+    id: 'authentic',
+    title: 'Authentic reviews',
+    body: 'Honest ratings on vibe, queue speed, and goodie bags — not polished brand copy or paid posts.',
+    icon: IconShieldCheck,
+  },
+  {
+    id: 'real-people',
+    title: 'Real people',
+    body: 'Every review comes from a verified visitor. No fake accounts, no anonymous spam.',
+    icon: IconUserCheck,
   },
 ]
 
@@ -91,6 +115,28 @@ export default function BusinessPage() {
                   <p className="business-card__text">{body}</p>
                 </div>
               </li>
+              )
+            })}
+          </ul>
+        </section>
+
+        <section className="business-why" aria-labelledby="business-why-heading">
+          <h2 id="business-why-heading" className="business-benefits__title">
+            Why us?
+          </h2>
+          <ul className="business-benefits__list">
+            {WHY_US.map(({ id, title, body, icon }) => {
+              const IconComponent = icon
+              return (
+                <li key={id} className="business-card business-card--why">
+                  <div className="business-card__icon business-card__icon--why" aria-hidden>
+                    <IconComponent className="business-card__icon-svg" ariaHidden />
+                  </div>
+                  <div className="business-card__body">
+                    <h3 className="business-card__title">{title}</h3>
+                    <p className="business-card__text">{body}</p>
+                  </div>
+                </li>
               )
             })}
           </ul>
