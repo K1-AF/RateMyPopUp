@@ -337,3 +337,98 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Delete confirmation modal */
+
+.account-delete-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(45, 38, 64, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.account-delete-modal__dialog {
+  width: 100%;
+  max-width: 22rem;
+  padding: 1.35rem 1.4rem 1.25rem;
+  border-radius: 16px;
+  border: 1px solid rgba(92, 85, 104, 0.12);
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(45, 38, 64, 0.22);
+  text-align: center;
+}
+
+.account-delete-modal__title {
+  margin: 0 0 0.65rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-dark, #2d2640);
+  line-height: 1.35;
+}
+
+.account-delete-modal__text {
+  margin: 0 0 1.15rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #6b6483;
+}
+
+.account-delete-modal__text strong {
+  color: var(--text-dark, #2d2640);
+  font-weight: 700;
+}
+
+.account-delete-modal__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.account-delete-modal__btn {
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.account-delete-modal__btn:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.account-delete-modal__btn--yes {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.28);
+}
+
+.account-delete-modal__btn--yes:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.account-delete-modal__btn--no {
+  background: #fff;
+  border-color: rgba(92, 85, 104, 0.22);
+  color: #4a435f;
+}
+
+.account-delete-modal__btn--no:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: rgba(124, 58, 237, 0.28);
+  color: #7c3aed;
+}
+
+.account-delete-modal__btn:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}

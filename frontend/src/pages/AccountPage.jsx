@@ -25,6 +25,7 @@ export default function AccountPage() {
   const [error, setError] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState(null)
   const [actionError, setActionError] = useState('')
 
   const displayName =
@@ -66,20 +67,30 @@ export default function AccountPage() {
     loadReviews()
   }, [loadReviews])
 
-  const handleDelete = async (reviewId) => {
-    const companyName =
-      reviews.find((r) => r.review_id === reviewId)?.company?.company_name || 'this review'
-    const ok = window.confirm(
-      `Delete your review for ${companyName}? This cannot be undone.`
-    )
-    if (!ok) return
+  useEffect(() => {
+    if (!pendingDeleteId) return undefined
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape' && !deletingId) setPendingDeleteId(null)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [pendingDeleteId, deletingId])
 
-    setDeletingId(reviewId)
+  const pendingDeleteReview = useMemo(
+    () => reviews.find((r) => r.review_id === pendingDeleteId) ?? null,
+    [reviews, pendingDeleteId]
+  )
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return
+
+    setDeletingId(pendingDeleteId)
     setActionError('')
     try {
-      await deleteReview(reviewId)
-      setReviews((prev) => prev.filter((r) => r.review_id !== reviewId))
-      if (editingId === reviewId) setEditingId(null)
+      await deleteReview(pendingDeleteId)
+      setReviews((prev) => prev.filter((r) => r.review_id !== pendingDeleteId))
+      if (editingId === pendingDeleteId) setEditingId(null)
+      setPendingDeleteId(null)
     } catch (err) {
       setActionError(err?.message || 'Could not delete review.')
     } finally {
@@ -164,7 +175,6 @@ export default function AccountPage() {
             <ul className="account-review-list">
               {reviews.map((review) => {
                 const isEditing = editingId === review.review_id
-                const isDeleting = deletingId === review.review_id
                 return (
                   <li key={review.review_id} className="account-review-card">
                     {isEditing ? (
@@ -190,10 +200,13 @@ export default function AccountPage() {
                           <button
                             type="button"
                             className="account-review-card__btn account-review-card__btn--danger"
-                            onClick={() => handleDelete(review.review_id)}
-                            disabled={isDeleting}
+                            onClick={() => {
+                              setPendingDeleteId(review.review_id)
+                              setActionError('')
+                            }}
+                            disabled={Boolean(deletingId)}
                           >
-                            {isDeleting ? 'Deleting…' : 'Delete'}
+                            Delete
                           </button>
                         </div>
                       </>
@@ -205,6 +218,57 @@ export default function AccountPage() {
           </>
         )}
       </div>
+
+      {pendingDeleteId ? (
+        <div
+          className="account-delete-modal"
+          role="presentation"
+          onClick={() => {
+            if (!deletingId) setPendingDeleteId(null)
+          }}
+        >
+          <div
+            className="account-delete-modal__dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="account-delete-title"
+            aria-describedby="account-delete-desc"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="account-delete-title" className="account-delete-modal__title">
+              Are you sure you want to delete this review?
+            </h2>
+            <p id="account-delete-desc" className="account-delete-modal__text">
+              {pendingDeleteReview?.company?.company_name ? (
+                <>
+                  This will permanently remove your review for{' '}
+                  <strong>{pendingDeleteReview.company.company_name}</strong>.
+                </>
+              ) : (
+                'This action cannot be undone.'
+              )}
+            </p>
+            <div className="account-delete-modal__actions">
+              <button
+                type="button"
+                className="account-delete-modal__btn account-delete-modal__btn--yes"
+                onClick={confirmDelete}
+                disabled={Boolean(deletingId)}
+              >
+                {deletingId ? 'Deleting…' : 'Yes'}
+              </button>
+              <button
+                type="button"
+                className="account-delete-modal__btn account-delete-modal__btn--no"
+                onClick={() => setPendingDeleteId(null)}
+                disabled={Boolean(deletingId)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }
