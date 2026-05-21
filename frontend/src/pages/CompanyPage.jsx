@@ -33,7 +33,176 @@ function reviewSignature(row) {
     row.reason_visit ?? '',
     row.hear_about ?? '',
     row.comments ?? '',
+    row.popup_name ?? '',
   ].join('|')
+}
+
+function groupReviewsByPopupName(reviews) {
+  const named = new Map()
+  const unnamed = []
+
+  for (const row of reviews) {
+    const label = String(row.popup_name ?? '').trim()
+    if (!label) {
+      unnamed.push(row)
+      continue
+    }
+    const key = label.toLowerCase()
+    if (!named.has(key)) {
+      named.set(key, { title: label, reviews: [] })
+    }
+    named.get(key).reviews.push(row)
+  }
+
+  return {
+    unnamed,
+    groups: [...named.values()].sort((a, b) => a.title.localeCompare(b.title)),
+  }
+}
+
+function buildReviewLink(company, popupTitle = '') {
+  const params = new URLSearchParams()
+  if (company?.company_name) params.set('company', company.company_name)
+  if (company?.company_id) params.set('companyId', company.company_id)
+  if (popupTitle) params.set('popupName', popupTitle)
+  const query = params.toString()
+  return query ? `/review?${query}` : '/review'
+}
+
+function CompanyReviewCard({ row, company }) {
+  const secured = parseMultiField(row.items_secured)
+  const reasons = parseMultiField(row.reason_visit)
+
+  return (
+    <li className="recent-review company-review">
+      <header className="recent-review__head">
+        <div>
+          <p className="recent-review__company">
+            {row.collabCompanyName || company?.company_name || 'Unknown pop-up'}
+          </p>
+          <p className="recent-review__meta">
+            <span>{row.account?.display_name || 'Anonymous'}</span>
+            <span className="recent-review__dot" aria-hidden>
+              •
+            </span>
+            <time dateTime={row.date}>{formatDate(row.date)}</time>
+          </p>
+        </div>
+        {row.hear_about ? (
+          <span className="recent-review__chip recent-review__chip--source">
+            via {row.hear_about}
+          </span>
+        ) : null}
+      </header>
+
+      <div className="recent-review__ratings">
+        <div className="recent-review__stars" aria-label={`Vibe: ${row.vibe} out of 5`}>
+          <span className="recent-review__stars-label">Vibe</span>
+          <span className="recent-review__stars-row" aria-hidden>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <svg
+                key={`vibe-${row.review_id}-${n}`}
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                className={`recent-review__star ${n <= Number(row.vibe || 0) ? 'is-filled' : ''}`}
+              >
+                <path
+                  d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                  fill={n <= Number(row.vibe || 0) ? '#fbbf24' : 'none'}
+                  stroke="#eab308"
+                  strokeWidth="1.4"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ))}
+          </span>
+          <span className="recent-review__stars-value">{Number(row.vibe || 0)}/5</span>
+        </div>
+        <div className="recent-review__stars" aria-label={`Queue: ${row.queue_speed} out of 5`}>
+          <span className="recent-review__stars-label">Queue</span>
+          <span className="recent-review__stars-row" aria-hidden>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <svg
+                key={`queue-${row.review_id}-${n}`}
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                className={`recent-review__star ${n <= Number(row.queue_speed || 0) ? 'is-filled' : ''}`}
+              >
+                <path
+                  d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                  fill={n <= Number(row.queue_speed || 0) ? '#fbbf24' : 'none'}
+                  stroke="#eab308"
+                  strokeWidth="1.4"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ))}
+          </span>
+          <span className="recent-review__stars-value">{Number(row.queue_speed || 0)}/5</span>
+        </div>
+        <div
+          className="recent-review__stars"
+          aria-label={`Goodie bag: ${row.goodie_bag_quality} out of 5`}
+        >
+          <span className="recent-review__stars-label">Goodie bag</span>
+          <span className="recent-review__stars-row" aria-hidden>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <svg
+                key={`goodie-${row.review_id}-${n}`}
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                className={`recent-review__star ${n <= Number(row.goodie_bag_quality || 0) ? 'is-filled' : ''}`}
+              >
+                <path
+                  d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                  fill={n <= Number(row.goodie_bag_quality || 0) ? '#fbbf24' : 'none'}
+                  stroke="#eab308"
+                  strokeWidth="1.4"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ))}
+          </span>
+          <span className="recent-review__stars-value">
+            {Number(row.goodie_bag_quality || 0)}/5
+          </span>
+        </div>
+      </div>
+
+      {row.comments ? <p className="recent-review__comments">“{row.comments}”</p> : null}
+
+      {secured.length > 0 ? (
+        <div className="recent-review__chips-group">
+          <p className="recent-review__chips-label">Secured:</p>
+          <ul className="recent-review__chips">
+            {secured.map((item) => (
+              <li key={`${row.review_id}-secured-${item}`} className="recent-review__chip">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {reasons.length > 0 ? (
+        <div className="recent-review__chips-group">
+          <p className="recent-review__chips-label">Main reason:</p>
+          <ul className="recent-review__chips">
+            {reasons.map((item) => (
+              <li
+                key={`${row.review_id}-reason-${item}`}
+                className="recent-review__chip recent-review__chip--soft"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </li>
+  )
 }
 
 export default function CompanyPage() {
@@ -125,6 +294,8 @@ export default function CompanyPage() {
     return (stats.avgVibe + stats.avgQueue + stats.avgGoodie) / 3
   }, [stats])
 
+  const reviewGroups = useMemo(() => groupReviewsByPopupName(reviews), [reviews])
+
   return (
     <section className="company-page" aria-labelledby="company-title">
       <div className="company-page__inner">
@@ -173,152 +344,45 @@ export default function CompanyPage() {
                 No reviews yet. Be the first person to rate this pop-up.
               </p>
             ) : (
-              <ul className="company-reviews" aria-label="Company reviews">
-                {reviews.map((row) => {
-                  const secured = parseMultiField(row.items_secured)
-                  const reasons = parseMultiField(row.reason_visit)
-                  return (
-                    <li key={row.review_id} className="recent-review company-review">
-                      <header className="recent-review__head">
-                        <div>
-                          <p className="recent-review__company">
-                            {row.collabCompanyName || company?.company_name || 'Unknown pop-up'}
-                          </p>
-                          <p className="recent-review__meta">
-                            <span>{row.account?.display_name || 'Anonymous'}</span>
-                            <span className="recent-review__dot" aria-hidden>
-                              •
-                            </span>
-                            <time dateTime={row.date}>{formatDate(row.date)}</time>
-                          </p>
-                        </div>
-                        {row.hear_about ? (
-                          <span className="recent-review__chip recent-review__chip--source">
-                            via {row.hear_about}
-                          </span>
-                        ) : null}
-                      </header>
+              <div className="company-page__reviews">
+                {reviewGroups.unnamed.length > 0 ? (
+                  <section className="company-popup-section" aria-label="Reviews">
+                    <ul className="company-reviews">
+                      {reviewGroups.unnamed.map((row) => (
+                        <CompanyReviewCard key={row.review_id} row={row} company={company} />
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
 
-                      <div className="recent-review__ratings">
-                        <div
-                          className="recent-review__stars"
-                          aria-label={`Vibe: ${row.vibe} out of 5`}
-                        >
-                          <span className="recent-review__stars-label">Vibe</span>
-                          <span className="recent-review__stars-row" aria-hidden>
-                            {[1, 2, 3, 4, 5].map((n) => (
-                              <svg
-                                key={`vibe-${row.review_id}-${n}`}
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                className={`recent-review__star ${n <= Number(row.vibe || 0) ? 'is-filled' : ''}`}
-                              >
-                                <path
-                                  d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                                  fill={n <= Number(row.vibe || 0) ? '#fbbf24' : 'none'}
-                                  stroke="#eab308"
-                                  strokeWidth="1.4"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            ))}
-                          </span>
-                          <span className="recent-review__stars-value">
-                            {Number(row.vibe || 0)}/5
-                          </span>
-                        </div>
-                        <div
-                          className="recent-review__stars"
-                          aria-label={`Queue: ${row.queue_speed} out of 5`}
-                        >
-                          <span className="recent-review__stars-label">Queue</span>
-                          <span className="recent-review__stars-row" aria-hidden>
-                            {[1, 2, 3, 4, 5].map((n) => (
-                              <svg
-                                key={`queue-${row.review_id}-${n}`}
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                className={`recent-review__star ${n <= Number(row.queue_speed || 0) ? 'is-filled' : ''}`}
-                              >
-                                <path
-                                  d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                                  fill={n <= Number(row.queue_speed || 0) ? '#fbbf24' : 'none'}
-                                  stroke="#eab308"
-                                  strokeWidth="1.4"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            ))}
-                          </span>
-                          <span className="recent-review__stars-value">
-                            {Number(row.queue_speed || 0)}/5
-                          </span>
-                        </div>
-                        <div
-                          className="recent-review__stars"
-                          aria-label={`Goodie bag: ${row.goodie_bag_quality} out of 5`}
-                        >
-                          <span className="recent-review__stars-label">Goodie bag</span>
-                          <span className="recent-review__stars-row" aria-hidden>
-                            {[1, 2, 3, 4, 5].map((n) => (
-                              <svg
-                                key={`goodie-${row.review_id}-${n}`}
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                className={`recent-review__star ${n <= Number(row.goodie_bag_quality || 0) ? 'is-filled' : ''}`}
-                              >
-                                <path
-                                  d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                                  fill={n <= Number(row.goodie_bag_quality || 0) ? '#fbbf24' : 'none'}
-                                  stroke="#eab308"
-                                  strokeWidth="1.4"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            ))}
-                          </span>
-                          <span className="recent-review__stars-value">
-                            {Number(row.goodie_bag_quality || 0)}/5
-                          </span>
-                        </div>
-                      </div>
-
-                      {row.comments ? <p className="recent-review__comments">“{row.comments}”</p> : null}
-
-                      {secured.length > 0 ? (
-                        <div className="recent-review__chips-group">
-                          <p className="recent-review__chips-label">Secured:</p>
-                          <ul className="recent-review__chips">
-                            {secured.map((item) => (
-                              <li key={`${row.review_id}-secured-${item}`} className="recent-review__chip">
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                      {reasons.length > 0 ? (
-                        <div className="recent-review__chips-group">
-                          <p className="recent-review__chips-label">Main reason:</p>
-                          <ul className="recent-review__chips">
-                            {reasons.map((item) => (
-                              <li
-                                key={`${row.review_id}-reason-${item}`}
-                                className="recent-review__chip recent-review__chip--soft"
-                              >
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                    </li>
-                  )
-                })}
-              </ul>
+                {reviewGroups.groups.map((group) => (
+                  <section
+                    key={group.title}
+                    className="company-popup-section"
+                    aria-labelledby={`popup-${group.title.replace(/\s+/g, '-')}`}
+                  >
+                    <div className="company-popup-section__head">
+                      <h2
+                        id={`popup-${group.title.replace(/\s+/g, '-')}`}
+                        className="company-popup-section__title"
+                      >
+                        {group.title}
+                      </h2>
+                      <Link
+                        to={buildReviewLink(company, group.title)}
+                        className="company-popup-section__review-link"
+                      >
+                        Review this pop-up
+                      </Link>
+                    </div>
+                    <ul className="company-reviews">
+                      {group.reviews.map((row) => (
+                        <CompanyReviewCard key={row.review_id} row={row} company={company} />
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
             )}
           </>
         )}

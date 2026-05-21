@@ -188,6 +188,7 @@ export function AccountReviewEditor({ review, onSaved, onCancel }) {
 
 export function AccountReviewSummary({ review }) {
   const company = review.company?.company_name || 'Unknown pop-up'
+  const popupTitle = String(review.popup_name ?? '').trim()
   const avg = (
     (Number(review.vibe || 0) +
       Number(review.queue_speed || 0) +
@@ -200,6 +201,9 @@ export function AccountReviewSummary({ review }) {
       <div className="account-review-card__head">
         <div>
           <h2 className="account-review-card__company">{company}</h2>
+          {popupTitle ? (
+            <p className="account-review-card__popup-name">{popupTitle}</p>
+          ) : null}
           <p className="account-review-card__meta">
             <time dateTime={review.date}>{formatDate(review.date)}</time>
             <span aria-hidden> · </span>
