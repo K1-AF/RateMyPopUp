@@ -73,16 +73,22 @@ export const HARDCODED_REVIEWS = [
   },
 ]
 
+export const CAROUSEL_REVIEW_LIMIT = 5
+
 /** Newest first — ready for the carousel. */
-export function getHardcodedReviews(limit = 6) {
+export function getHardcodedReviews(limit = CAROUSEL_REVIEW_LIMIT) {
   return [...HARDCODED_REVIEWS]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, limit)
 }
 
-/** Merges demo reviews with live submissions, newest first. */
-export function mergeCarouselReviews(hardcoded, live) {
-  return [...live, ...hardcoded].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  )
+/** Merges demo reviews with live submissions, newest first (capped for carousel). */
+export function mergeCarouselReviews(
+  hardcoded,
+  live,
+  limit = CAROUSEL_REVIEW_LIMIT
+) {
+  return [...live, ...hardcoded]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, Math.max(1, limit))
 }
