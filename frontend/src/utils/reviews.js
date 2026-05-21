@@ -469,6 +469,7 @@ export async function fetchRecentReviews(limit = 10) {
         hear_about,
         comments,
         date,
+        popup_name,
         proof,
         company:company_id ( company_name ),
         account:account_id ( display_name, avatar_url )
@@ -479,4 +480,26 @@ export async function fetchRecentReviews(limit = 10) {
 
   if (error) throw new Error(error.message || 'Failed to load reviews')
   return attachProofUrlsToReviews(data ?? [])
+}
+
+/** Normalizes a review row for the home carousel UI. */
+export function mapReviewForCarousel(row) {
+  const companyName = row.company?.company_name || 'Unknown pop-up'
+  const popupTitle = String(row.popup_name ?? '').trim()
+
+  return {
+    id: row.review_id,
+    company: popupTitle ? `${companyName} · ${popupTitle}` : companyName,
+    createdAt: row.date,
+    reviewer: row.account?.display_name || 'Anonymous',
+    ratings: {
+      vibe: Number(row.vibe || 0),
+      queue: Number(row.queue_speed || 0),
+      goodie: Number(row.goodie_bag_quality || 0),
+    },
+    secured: parseMultiField(row.items_secured),
+    visitMain: parseMultiField(row.reason_visit),
+    hearAbout: row.hear_about || '',
+    comments: row.comments || '',
+  }
 }

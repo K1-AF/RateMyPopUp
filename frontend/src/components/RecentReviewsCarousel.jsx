@@ -1,8 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { getHardcodedReviews } from '../data/hardcodedReviews.js'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  getHardcodedReviews,
+  mergeCarouselReviews,
+} from '../data/hardcodedReviews.js'
+import {
+  fetchRecentReviews,
+  mapReviewForCarousel,
+} from '../utils/reviews.js'
 import './RecentReviewsCarousel.css'
 
 const SLIDE_MS = 6500
+const LIVE_REVIEW_FETCH_LIMIT = 30
 
 function formatDate(iso) {
   try {
@@ -45,10 +53,26 @@ function StarRow({ label, value }) {
 }
 
 export function RecentReviewsCarousel() {
-  const reviews = useMemo(() => getHardcodedReviews(6), [])
+  const hardcodedReviews = useMemo(() => getHardcodedReviews(), [])
+  const [reviews, setReviews] = useState(hardcodedReviews)
   const [active, setActive] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const wrapperRef = useRef(null)
+
+  const loadReviews = useCallback(async () => {
+    try {
+      const rows = await fetchRecentReviews(LIVE_REVIEW_FETCH_LIMIT)
+      const liveReviews = rows.map(mapReviewForCarousel)
+      setReviews(mergeCarouselReviews(hardcodedReviews, liveReviews))
+    } catch (err) {
+      console.warn('[carousel] failed to load live reviews:', err?.message)
+      setReviews(hardcodedReviews)
+    }
+  }, [hardcodedReviews])
+
+  useEffect(() => {
+    loadReviews()
+  }, [loadReviews])
 
   useEffect(() => {
     if (reviews.length < 2 || isPaused) return undefined
@@ -59,6 +83,7 @@ export function RecentReviewsCarousel() {
   }, [reviews.length, isPaused])
 
   const goTo = (index) => {
+    if (!reviews.length) return
     setActive(((index % reviews.length) + reviews.length) % reviews.length)
   }
 
@@ -109,9 +134,11 @@ export function RecentReviewsCarousel() {
                   </time>
                 </p>
               </div>
-              <span className="recent-review__chip recent-review__chip--source">
-                via {activeReview.hearAbout}
-              </span>
+              {activeReview.hearAbout ? (
+                <span className="recent-review__chip recent-review__chip--source">
+                  via {activeReview.hearAbout}
+                </span>
+              ) : null}
             </header>
 
             <div className="recent-review__ratings">
@@ -126,27 +153,31 @@ export function RecentReviewsCarousel() {
               </p>
             ) : null}
 
-            <div className="recent-review__chips-group">
-              <p className="recent-review__chips-label">Secured:</p>
-              <ul className="recent-review__chips">
-                {activeReview.secured.map((item) => (
-                  <li key={item} className="recent-review__chip">
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {activeReview.secured.length > 0 ? (
+              <div className="recent-review__chips-group">
+                <p className="recent-review__chips-label">Secured:</p>
+                <ul className="recent-review__chips">
+                  {activeReview.secured.map((item) => (
+                    <li key={item} className="recent-review__chip">
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
-            <div className="recent-review__chips-group">
-              <p className="recent-review__chips-label">Main reason:</p>
-              <ul className="recent-review__chips">
-                {activeReview.visitMain.map((item) => (
-                  <li key={item} className="recent-review__chip recent-review__chip--soft">
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {activeReview.visitMain.length > 0 ? (
+              <div className="recent-review__chips-group">
+                <p className="recent-review__chips-label">Main reason:</p>
+                <ul className="recent-review__chips">
+                  {activeReview.visitMain.map((item) => (
+                    <li key={item} className="recent-review__chip recent-review__chip--soft">
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </article>
         </div>
 
