@@ -19,6 +19,7 @@ const MY_REVIEW_SELECT = `
   purchased_at_popup,
   heard_brand_before,
   attended_with,
+  popup_name,
   company:company_id ( company_name )
 `
 

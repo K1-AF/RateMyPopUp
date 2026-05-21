@@ -2,11 +2,14 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext.jsx'
 import { CompanyAutocomplete } from '../components/CompanyAutocomplete.jsx'
+import { PopupNameAutocomplete } from '../components/PopupNameAutocomplete.jsx'
 import { StarRating } from '../components/StarRating.jsx'
 import {
   attachProofToReview,
   getOrCreateCompanyId,
   insertReview,
+  normalizePopupName,
+  resolveCanonicalPopupName,
   uploadReviewProof,
   validateProofImage,
 } from '../utils/reviews.js'
@@ -124,8 +127,13 @@ export default function ReviewPage() {
     const raw = params.get('companyId')
     return raw && raw.length <= 64 ? raw : null
   }, [location.search])
+  const initialPopupName = useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    return params.get('popupName')?.slice(0, 120) ?? ''
+  }, [location.search])
   const [companyQuery, setCompanyQuery] = useState('')
   const [selectedCompanies, setSelectedCompanies] = useState([])
+  const [popupName, setPopupName] = useState('')
   const [secured, setSecured] = useState(() => new Set())
   const [vibe, setVibe] = useState(0)
   const [queue, setQueue] = useState(0)
@@ -175,7 +183,8 @@ export default function ReviewPage() {
     }
     setSelectedCompanies(next)
     setCompanyQuery('')
-  }, [initialCompanyId, initialCompanyQuery])
+    setPopupName(initialPopupName.trim())
+  }, [initialCompanyId, initialCompanyQuery, initialPopupName])
 
   const clearError = useCallback((key) => {
     setErrors((prev) => {
@@ -209,6 +218,11 @@ export default function ReviewPage() {
 
     return out.slice(0, MAX_COLLAB_COMPANIES)
   }, [companyQuery, selectedCompanies])
+
+  const collabCompanyName = useMemo(
+    () => buildCollabCompanyName(companiesToSubmit.map((c) => c.name)),
+    [companiesToSubmit]
+  )
 
   const addSelectedCompany = useCallback((name, companyId = null) => {
     const trimmed = String(name ?? '').trim()
@@ -496,6 +510,10 @@ export default function ReviewPage() {
       }
 
       const companyId = await getOrCreateCompanyId(collabName)
+      const popupNameRaw = normalizePopupName(popupName)
+      const popupNameToStore = popupNameRaw
+        ? await resolveCanonicalPopupName(companyId, popupNameRaw)
+        : null
 
       // Serialize multi-select chips (existing columns are varchar).
       const securedPayload = [
@@ -529,6 +547,7 @@ export default function ReviewPage() {
         reason_visit: JSON.stringify(visitPayload),
         hear_about: hearAboutPayload,
         comments: comments.trim() || null,
+        popup_name: popupNameToStore,
         proof: null,
         date: submittedAt,
         brand_perception_likert: brandPerceptionLikert,
@@ -633,6 +652,7 @@ export default function ReviewPage() {
             </div>
             <p className="review-company-hint">
               Pick individual brands from search, if collabed then add all companies involved.
+              If company doesn't exist, be the first to create it!
             </p>
             {selectedCompanies.length > 0 ? (
               <ul className="review-company-list" aria-label="Selected companies">
@@ -663,6 +683,18 @@ export default function ReviewPage() {
                 {errors.company}
               </p>
             ) : null}
+          </div>
+
+          <div className="review-field">
+            <label className="review-field__label" htmlFor="popup-name">
+              Name of pop-up (Optional)
+            </label>
+            <PopupNameAutocomplete
+              id="popup-name"
+              value={popupName}
+              onValueChange={setPopupName}
+              companyCollabName={collabCompanyName}
+            />
           </div>
 
           <fieldset

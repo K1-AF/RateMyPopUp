@@ -151,6 +151,13 @@
   color: var(--text-dark, #2d2640);
 }
 
+.account-review-card__popup-name {
+  margin: 0 0 0.15rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #5b21b6;
+}
+
 .account-review-card__meta {
   margin: 0;
   font-size: 0.85rem;

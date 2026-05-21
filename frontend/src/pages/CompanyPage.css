@@ -96,6 +96,48 @@
   gap: 0.7rem;
 }
 
+.company-page__reviews {
+  display: grid;
+  gap: 1.35rem;
+}
+
+.company-popup-section {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.company-popup-section__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.company-popup-section__title {
+  margin: 0;
+  color: #3f3658;
+  font-size: clamp(1.15rem, 2.2vw, 1.45rem);
+  font-weight: 700;
+}
+
+.company-popup-section__review-link {
+  color: #7c3aed;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.company-popup-section__review-link:hover {
+  text-decoration: underline;
+}
+
+.company-popup-section__review-link:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 .company-review {
   border: 1px solid rgba(92, 85, 104, 0.2);
   border-radius: 12px;

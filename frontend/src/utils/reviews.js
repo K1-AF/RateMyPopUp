@@ -16,8 +16,10 @@ import { isCollabCompanyName } from './companies.js'
  * - Experience extras: brand_perception_likert (1–5), online_purchase_likert (1–5),
  *   purchased_at_popup, heard_brand_before, attended_with — see migrations
  *   0004_review_experience_questions.sql, 0007_online_purchase_likert.sql, and
- *   0008_staff_helpfulness.sql
+ *   0008_staff_helpfulness.sql, and 0010_popup_name.sql
  */
+
+export const MAX_POPUP_NAME_LENGTH = 120
 
 export const PROOF_BUCKET = 'review-proofs'
 export const MAX_PROOF_BYTES = 5 * 1024 * 1024
@@ -164,6 +166,87 @@ function escapeIlike(value) {
   return String(value).replace(/\\/g, '\\\\').replace(/([%_])/g, '\\$1')
 }
 
+/** Trims and caps optional pop-up names before storage or lookup. */
+export function normalizePopupName(value) {
+  return String(value ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, MAX_POPUP_NAME_LENGTH)
+}
+
+/**
+ * Returns the stored pop-up name when one already exists for this company
+ * (case-insensitive match); otherwise returns the normalized input.
+ */
+export async function resolveCanonicalPopupName(companyId, inputName) {
+  const normalized = normalizePopupName(inputName)
+  const safeCompanyId = String(companyId ?? '').trim()
+  if (!normalized || !safeCompanyId) return null
+
+  const { data, error } = await supabase
+    .from('review')
+    .select('popup_name')
+    .eq('company_id', safeCompanyId)
+    .not('popup_name', 'is', null)
+    .order('date', { ascending: true })
+    .limit(250)
+
+  if (error) throw new Error(error.message || 'Failed to resolve pop-up name')
+
+  const target = normalized.toLowerCase()
+  for (const row of data ?? []) {
+    const existing = normalizePopupName(row.popup_name)
+    if (existing && existing.toLowerCase() === target) return existing
+  }
+
+  return normalized
+}
+
+/**
+ * Distinct pop-up names already used for a company (by canonical collab name).
+ * Powers the optional "Name of pop-up" autocomplete on the review form.
+ */
+export async function searchPopupNames(companyCollabName, query = '', limit = 8) {
+  const companyName = String(companyCollabName ?? '').trim()
+  if (!companyName) return []
+
+  const { data: company, error: companyError } = await supabase
+    .from('company')
+    .select('company_id')
+    .eq('company_name', companyName)
+    .maybeSingle()
+
+  if (companyError) throw new Error(companyError.message || 'Failed to load company')
+  if (!company?.company_id) return []
+
+  const { data, error } = await supabase
+    .from('review')
+    .select('popup_name')
+    .eq('company_id', company.company_id)
+    .not('popup_name', 'is', null)
+    .order('date', { ascending: false })
+    .limit(250)
+
+  if (error) throw new Error(error.message || 'Failed to search pop-up names')
+
+  const needle = normalizePopupName(query).toLowerCase()
+  const seen = new Set()
+  const out = []
+
+  for (const row of data ?? []) {
+    const name = normalizePopupName(row.popup_name)
+    if (!name) continue
+    const key = name.toLowerCase()
+    if (seen.has(key)) continue
+    if (needle && !key.includes(needle)) continue
+    seen.add(key)
+    out.push({ popup_name: name })
+    if (out.length >= Math.max(1, Math.min(20, limit))) break
+  }
+
+  return out
+}
+
 /**
  * Typeahead search over companies. Case-insensitive substring match.
  * Collab companies (names containing " x ") are excluded so reviewers pick
@@ -252,6 +335,7 @@ export async function fetchReviewsForCompany(companyId, limit = 50) {
         reason_visit,
         hear_about,
         comments,
+        popup_name,
         date,
         account:account_id ( display_name )
       `
