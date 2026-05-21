@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  CAROUSEL_REVIEW_LIMIT,
   getHardcodedReviews,
   mergeCarouselReviews,
+  HARDCODED_REVIEWS,
 } from '../data/hardcodedReviews.js'
 import {
   fetchRecentReviews,
@@ -10,7 +12,7 @@ import {
 import './RecentReviewsCarousel.css'
 
 const SLIDE_MS = 6500
-const LIVE_REVIEW_FETCH_LIMIT = 30
+const LIVE_REVIEW_FETCH_LIMIT = CAROUSEL_REVIEW_LIMIT
 
 function formatDate(iso) {
   try {
@@ -53,8 +55,14 @@ function StarRow({ label, value }) {
 }
 
 export function RecentReviewsCarousel() {
-  const hardcodedReviews = useMemo(() => getHardcodedReviews(), [])
-  const [reviews, setReviews] = useState(hardcodedReviews)
+  const hardcodedReviews = useMemo(
+    () =>
+      [...HARDCODED_REVIEWS].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ),
+    []
+  )
+  const [reviews, setReviews] = useState(() => getHardcodedReviews())
   const [active, setActive] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const wrapperRef = useRef(null)
@@ -66,7 +74,7 @@ export function RecentReviewsCarousel() {
       setReviews(mergeCarouselReviews(hardcodedReviews, liveReviews))
     } catch (err) {
       console.warn('[carousel] failed to load live reviews:', err?.message)
-      setReviews(hardcodedReviews)
+      setReviews(getHardcodedReviews())
     }
   }, [hardcodedReviews])
 
