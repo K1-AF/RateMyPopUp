@@ -21,6 +21,21 @@
   font-size: 0.95rem;
 }
 
+.recent-reviews__state {
+  margin: 0;
+  padding: 1.25rem 1.5rem;
+  border-radius: 18px;
+  border: 1px solid rgba(124, 58, 237, 0.12);
+  background: #fff;
+  color: #5c5568;
+  text-align: center;
+}
+
+.recent-reviews__state--error {
+  color: #b42318;
+  border-color: rgba(180, 35, 24, 0.28);
+}
+
 .recent-reviews__viewport {
   position: relative;
   background: #ffffff;
