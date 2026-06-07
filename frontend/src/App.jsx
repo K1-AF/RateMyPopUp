@@ -1,4 +1,4 @@
-import { Link, Route, Routes } from 'react-router-dom'
+import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import bannerLogoImg from './assets/ratemypopup.png'
 import { AdminNavLinks } from './auth/AdminNavLinks.jsx'
 import { AuthMenu } from './auth/AuthMenu.jsx'
@@ -17,9 +17,24 @@ import CompanyPage from './pages/CompanyPage.jsx'
 import ExplorePage from './pages/ExplorePage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import ReviewPage from './pages/ReviewPage.jsx'
+import AgilePage from './pages/AgilePage.jsx'
 import './App.css'
 
 export default function App() {
+  const location = useLocation()
+  // The /agile area is a hidden, self-contained study tool. It is deliberately
+  // not linked anywhere in the site navigation and renders without the normal
+  // site header/footer so it feels like a separate app.
+  const isAgile = location.pathname.startsWith('/agile')
+
+  if (isAgile) {
+    return (
+      <Routes>
+        <Route path="/agile" element={<AgilePage />} />
+      </Routes>
+    )
+  }
+
   return (
     <div className="landing">
       <a href="#main-content" className="skip-link">

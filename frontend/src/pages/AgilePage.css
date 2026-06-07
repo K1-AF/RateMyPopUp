@@ -1,0 +1,824 @@
+/* Self-contained styling for the hidden /agile study area. Scoped under
+   .agile-root so it never leaks into the rest of the site. */
+
+.agile-root {
+  --ag-bg: #0f1220;
+  --ag-bg-2: #171a2e;
+  --ag-card: #1d2138;
+  --ag-card-2: #232743;
+  --ag-border: #2e3358;
+  --ag-text: #e8eaf6;
+  --ag-muted: #9aa0c7;
+  --ag-accent: #6c8cff;
+  --ag-accent-2: #8a6cff;
+  --ag-good: #2ecc8f;
+  --ag-bad: #ff5d6c;
+  --ag-warn: #ffb84d;
+
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(1200px 600px at 80% -10%, #20264a 0%, var(--ag-bg) 55%);
+  color: var(--ag-text);
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  overflow-y: auto;
+}
+
+.agile-root * {
+  box-sizing: border-box;
+}
+
+/* Header / tabs */
+.agile-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: rgba(15, 18, 32, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--ag-border);
+}
+.agile-header__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.agile-brand {
+  background: none;
+  border: 0;
+  color: var(--ag-text);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+}
+.agile-brand span {
+  color: var(--ag-accent);
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-left: 6px;
+}
+.agile-tabs {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.agile-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ag-muted);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.agile-tab:hover {
+  color: var(--ag-text);
+  background: var(--ag-card);
+}
+.agile-tab--active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--ag-accent), var(--ag-accent-2));
+}
+
+.agile-main {
+  flex: 1;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+
+.agile-footer {
+  text-align: center;
+  color: var(--ag-muted);
+  font-size: 0.8rem;
+  padding: 18px;
+  border-top: 1px solid var(--ag-border);
+}
+
+/* Buttons */
+.agile-btn {
+  background: var(--ag-card-2);
+  border: 1px solid var(--ag-border);
+  color: var(--ag-text);
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.agile-btn:hover:not(:disabled) {
+  border-color: var(--ag-accent);
+  transform: translateY(-1px);
+}
+.agile-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.agile-btn--primary {
+  background: linear-gradient(135deg, var(--ag-accent), var(--ag-accent-2));
+  border-color: transparent;
+  color: #fff;
+}
+.agile-btn--success {
+  background: var(--ag-good);
+  border-color: transparent;
+  color: #06231a;
+}
+.agile-btn--ghost {
+  background: transparent;
+}
+.agile-btn--ghost.is-active {
+  border-color: var(--ag-accent);
+  color: #fff;
+}
+
+/* Home */
+.agile-home__title {
+  font-size: 2rem;
+  margin: 0 0 6px;
+}
+.agile-home__lede {
+  color: var(--ag-muted);
+  margin: 0 0 28px;
+}
+.agile-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+.agile-card {
+  text-align: left;
+  background: var(--ag-card);
+  border: 1px solid var(--ag-border);
+  border-radius: 16px;
+  padding: 22px;
+  color: var(--ag-text);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.agile-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--ag-accent);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+.agile-card__emoji {
+  font-size: 2rem;
+}
+.agile-card h2 {
+  margin: 10px 0 8px;
+  font-size: 1.2rem;
+}
+.agile-card p {
+  margin: 0;
+  color: var(--ag-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.agile-examfacts {
+  margin-top: 30px;
+  background: var(--ag-bg-2);
+  border: 1px solid var(--ag-border);
+  border-radius: 14px;
+  padding: 18px 22px;
+}
+.agile-examfacts h3 {
+  margin: 0 0 10px;
+}
+.agile-examfacts ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ag-muted);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 4px 18px;
+}
+
+/* Toolbars / fields */
+.agile-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.agile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--ag-muted);
+}
+.agile-field select {
+  background: var(--ag-card-2);
+  color: var(--ag-text);
+  border: 1px solid var(--ag-border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 0.9rem;
+  min-width: 220px;
+}
+
+/* Flashcards */
+.agile-flash__progress {
+  margin-left: auto;
+  color: var(--ag-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.agile-flipcard {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  perspective: 1600px;
+  display: block;
+}
+.agile-flipcard__inner {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  transition: transform 0.5s;
+  transform-style: preserve-3d;
+}
+.agile-flipcard.is-flipped .agile-flipcard__inner {
+  transform: rotateY(180deg);
+}
+.agile-flipcard__face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--ag-border);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.agile-flipcard__front {
+  background: linear-gradient(160deg, var(--ag-card), var(--ag-card-2));
+}
+.agile-flipcard__back {
+  background: linear-gradient(160deg, #1c2a4a, #232743);
+  transform: rotateY(180deg);
+}
+.agile-flipcard__topic {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ag-accent);
+  font-weight: 700;
+}
+.agile-flipcard__text {
+  font-size: 1.25rem;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 720px;
+}
+.agile-flipcard__front .agile-flipcard__text {
+  color: #ffffff;
+  font-weight: 700;
+}
+.agile-flipcard__back .agile-flipcard__text {
+  font-size: 1.05rem;
+  color: #d7ddff;
+}
+.agile-flipcard__hint {
+  position: absolute;
+  bottom: 16px;
+  font-size: 0.75rem;
+  color: var(--ag-muted);
+}
+.agile-flash__controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* Confidence rating */
+.agile-confidence {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+.agile-confidence__label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ag-muted);
+  font-weight: 700;
+}
+.agile-confidence__btns {
+  display: flex;
+  gap: 10px;
+}
+.agile-conf-btn {
+  border: 1px solid var(--ag-border);
+  background: var(--ag-card-2);
+  color: var(--ag-text);
+  padding: 9px 22px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.agile-conf-btn:hover {
+  transform: translateY(-1px);
+}
+.agile-conf-btn--low.is-active {
+  background: var(--ag-bad);
+  border-color: transparent;
+  color: #2a0509;
+}
+.agile-conf-btn--medium.is-active {
+  background: var(--ag-warn);
+  border-color: transparent;
+  color: #2a1c00;
+}
+.agile-conf-btn--high.is-active {
+  background: var(--ag-good);
+  border-color: transparent;
+  color: #06231a;
+}
+
+/* Confidence counts in the progress line */
+.agile-conf-tag {
+  font-weight: 700;
+}
+.agile-conf-tag--low {
+  color: var(--ag-bad);
+}
+.agile-conf-tag--medium {
+  color: var(--ag-warn);
+}
+.agile-conf-tag--high {
+  color: var(--ag-good);
+}
+
+/* Matching game */
+.agile-statbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: var(--ag-bg-2);
+  border: 1px solid var(--ag-border);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+}
+.agile-statbar__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 64px;
+}
+.agile-statbar__num {
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+.agile-statbar__label {
+  font-size: 0.72rem;
+  color: var(--ag-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.agile-statbar__item--good .agile-statbar__num {
+  color: var(--ag-good);
+}
+.agile-statbar__item--bad .agile-statbar__num {
+  color: var(--ag-bad);
+}
+.agile-statbar .agile-btn {
+  margin-left: auto;
+}
+.agile-round-done {
+  background: rgba(46, 204, 143, 0.12);
+  border: 1px solid var(--ag-good);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.agile-match__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.agile-match__col h3 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  color: var(--ag-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.agile-match__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--ag-card);
+  border: 1px solid var(--ag-border);
+  color: var(--ag-text);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.agile-match__item:hover:not(:disabled) {
+  border-color: var(--ag-accent);
+}
+.agile-match__item.is-selected {
+  border-color: var(--ag-accent);
+  background: rgba(108, 140, 255, 0.18);
+  box-shadow: 0 0 0 2px rgba(108, 140, 255, 0.3);
+}
+.agile-match__item.is-targetable {
+  border-style: dashed;
+  border-color: var(--ag-accent-2);
+}
+.agile-match__item.is-matched {
+  opacity: 0.45;
+  background: rgba(46, 204, 143, 0.12);
+  border-color: var(--ag-good);
+  cursor: default;
+}
+.agile-match__item.is-wrong {
+  animation: agile-shake 0.4s;
+  border-color: var(--ag-bad);
+  background: rgba(255, 93, 108, 0.18);
+}
+@keyframes agile-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+/* Exams hub */
+.agile-exams__title {
+  font-size: 1.8rem;
+  margin: 0 0 6px;
+}
+.agile-exams__lede {
+  color: var(--ag-muted);
+  margin: 0 0 24px;
+  max-width: 760px;
+  line-height: 1.55;
+}
+.agile-exams__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+.agile-exam-card {
+  background: var(--ag-card);
+  border: 1px solid var(--ag-border);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.agile-exam-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.agile-exam-card__head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.agile-pill {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+}
+.agile-pill--pass {
+  background: rgba(46, 204, 143, 0.2);
+  color: var(--ag-good);
+}
+.agile-pill--fail {
+  background: rgba(255, 184, 77, 0.18);
+  color: var(--ag-warn);
+}
+.agile-exam-card__stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--ag-muted);
+  font-size: 0.88rem;
+  display: grid;
+  gap: 4px;
+}
+.agile-exam-card__none {
+  color: var(--ag-muted);
+  font-size: 0.88rem;
+  margin: 0;
+}
+.agile-exam-card .agile-btn {
+  margin-top: auto;
+}
+
+/* Exam runner */
+.agile-runner__bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.agile-runner__meta {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.82rem;
+  color: var(--ag-muted);
+}
+.agile-timer {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: 1.1rem;
+  background: var(--ag-card-2);
+  border: 1px solid var(--ag-border);
+  padding: 6px 14px;
+  border-radius: 10px;
+}
+.agile-timer--low {
+  color: var(--ag-bad);
+  border-color: var(--ag-bad);
+  animation: agile-pulse 1s infinite;
+}
+@keyframes agile-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.agile-progress-track {
+  height: 6px;
+  background: var(--ag-card);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 22px;
+}
+.agile-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ag-accent), var(--ag-accent-2));
+  transition: width 0.25s ease;
+}
+.agile-question {
+  background: var(--ag-card);
+  border: 1px solid var(--ag-border);
+  border-radius: 16px;
+  padding: 26px;
+}
+.agile-question__topic {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ag-accent);
+  font-weight: 700;
+}
+.agile-question__text {
+  margin: 10px 0 22px;
+  font-size: 1.25rem;
+  line-height: 1.45;
+}
+.agile-options {
+  display: grid;
+  gap: 12px;
+}
+.agile-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  background: var(--ag-card-2);
+  border: 1px solid var(--ag-border);
+  color: var(--ag-text);
+  border-radius: 12px;
+  padding: 15px 18px;
+  font-size: 0.98rem;
+  cursor: pointer;
+  transition: all 0.13s ease;
+}
+.agile-option:hover {
+  border-color: var(--ag-accent);
+}
+.agile-option__radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--ag-muted);
+  flex-shrink: 0;
+}
+.agile-option.is-selected {
+  border-color: var(--ag-accent);
+  background: rgba(108, 140, 255, 0.16);
+}
+.agile-option.is-selected .agile-option__radio {
+  border-color: var(--ag-accent);
+  background: var(--ag-accent);
+  box-shadow: inset 0 0 0 3px var(--ag-card-2);
+}
+.agile-runner__nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 22px;
+}
+.agile-qjump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ag-border);
+}
+.agile-qjump__dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--ag-border);
+  background: var(--ag-card);
+  color: var(--ag-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.agile-qjump__dot.is-answered {
+  color: var(--ag-text);
+  border-color: var(--ag-accent);
+  background: rgba(108, 140, 255, 0.16);
+}
+.agile-qjump__dot.is-current {
+  outline: 2px solid var(--ag-accent-2);
+  outline-offset: 1px;
+}
+.agile-runner__submit {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+/* Exam review */
+.agile-result {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 22px;
+  border: 1px solid var(--ag-border);
+}
+.agile-result.is-pass {
+  background: rgba(46, 204, 143, 0.12);
+  border-color: var(--ag-good);
+}
+.agile-result.is-fail {
+  background: rgba(255, 184, 77, 0.1);
+  border-color: var(--ag-warn);
+}
+.agile-result__score {
+  font-size: 3rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.agile-result__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.agile-result__detail strong {
+  font-size: 1.3rem;
+}
+.agile-result__detail span {
+  color: var(--ag-muted);
+}
+.agile-result__actions {
+  margin-left: auto;
+}
+.agile-review__filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.agile-review__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+.agile-review__item {
+  background: var(--ag-card);
+  border: 1px solid var(--ag-border);
+  border-left-width: 4px;
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.agile-review__item.is-correct {
+  border-left-color: var(--ag-good);
+}
+.agile-review__item.is-wrong {
+  border-left-color: var(--ag-bad);
+}
+.agile-review__topic {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ag-accent);
+  font-weight: 700;
+}
+.agile-review__q {
+  margin: 6px 0 12px;
+  font-weight: 600;
+  font-size: 1.02rem;
+}
+.agile-review__opts {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.agile-review__opt {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: var(--ag-card-2);
+  color: var(--ag-muted);
+}
+.agile-review__opt.is-answer {
+  background: rgba(46, 204, 143, 0.15);
+  color: var(--ag-good);
+  font-weight: 600;
+}
+.agile-review__opt.is-yourwrong {
+  background: rgba(255, 93, 108, 0.15);
+  color: var(--ag-bad);
+  font-weight: 600;
+}
+.agile-review__yours {
+  font-style: italic;
+  opacity: 0.8;
+}
+.agile-review__skipped {
+  color: var(--ag-warn);
+  font-size: 0.85rem;
+  margin: 0 0 8px;
+}
+.agile-review__explain {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ag-text);
+  background: var(--ag-bg-2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.5;
+}
+
+.agile-empty {
+  text-align: center;
+  color: var(--ag-muted);
+  padding: 40px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .agile-match__grid {
+    grid-template-columns: 1fr;
+  }
+  .agile-tabs {
+    width: 100%;
+    margin-left: 0;
+  }
+  .agile-result__actions {
+    margin-left: 0;
+  }
+}
