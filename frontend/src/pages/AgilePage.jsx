@@ -586,14 +586,33 @@ function FlashcardsView() {
 // ---------------------------------------------------------------------------
 const MATCH_ROUND_SIZE = 6
 
-// Pure helper: builds a fresh round (picked pairs + two independently shuffled
-// columns) for the given topic. Kept outside the component so it can seed the
-// initial state without needing an effect.
-function createRound(selectedTopic) {
-  const pool = MATCHING_PAIRS.filter(
+// Returns the pairs available for a topic ('ALL' = every topic).
+function poolForTopic(selectedTopic) {
+  return MATCHING_PAIRS.filter(
     (p) => selectedTopic === 'ALL' || p.topic === selectedTopic,
   )
-  const picked = shuffle(pool).slice(0, Math.min(MATCH_ROUND_SIZE, pool.length))
+}
+
+// Pure helper: builds a fresh round (picked pairs + two independently shuffled
+// columns) for the given topic. `excludeIds` lists pairs recently shown so that
+// pressing "New round" surfaces different questions than are already on screen.
+// If there aren't enough unseen pairs to fill a round, we top up from the rest.
+function createRound(selectedTopic, excludeIds = []) {
+  const pool = poolForTopic(selectedTopic)
+  const size = Math.min(MATCH_ROUND_SIZE, pool.length)
+  const exclude = new Set(excludeIds)
+
+  // Prefer pairs the player hasn't just seen.
+  const fresh = pool.filter((p) => !exclude.has(p.id))
+  let picked = shuffle(fresh).slice(0, size)
+
+  // Not enough unseen pairs? Fill the gap from the recently-seen ones.
+  if (picked.length < size) {
+    const used = new Set(picked.map((p) => p.id))
+    const rest = shuffle(pool.filter((p) => !used.has(p.id)))
+    picked = picked.concat(rest.slice(0, size - picked.length))
+  }
+
   return {
     pairs: picked,
     terms: shuffle(picked.map((p) => ({ id: p.id, text: p.term }))),
@@ -608,6 +627,9 @@ function MatchingView() {
   const [matched, setMatched] = useState(() => new Set())
   const [wrongFlash, setWrongFlash] = useState(null) // {termId, defId}
   const [roundWrong, setRoundWrong] = useState(0)
+  // Remembers pair ids shown in recent rounds so a "New round" generates
+  // different questions. Seeded with the initial round's ids.
+  const seenRef = useRef(round.pairs.map((p) => p.id))
   // Cumulative stats live in the progress context (cloud-synced for the owner,
   // localStorage-backed for everyone else).
   const {
@@ -616,8 +638,22 @@ function MatchingView() {
     resetMatchingStats,
   } = useAgileProgress()
 
-  const startRound = useCallback((selectedTopic) => {
-    setRound(createRound(selectedTopic))
+  const startRound = useCallback((selectedTopic, resetHistory = false) => {
+    // Switching topic clears the "recently seen" history for the new pool.
+    if (resetHistory) seenRef.current = []
+
+    const next = createRound(selectedTopic, seenRef.current)
+
+    // Remember what we just showed, then trim the history so it stays smaller
+    // than the pool — this guarantees the next round can still be filled while
+    // rotating through every available pair before any repeats.
+    const poolSize = poolForTopic(selectedTopic).length
+    const maxExclude = Math.max(0, poolSize - MATCH_ROUND_SIZE)
+    const seen = [...seenRef.current, ...next.pairs.map((p) => p.id)]
+    seenRef.current =
+      seen.length > maxExclude ? seen.slice(seen.length - maxExclude) : seen
+
+    setRound(next)
     setSelectedTerm(null)
     setMatched(new Set())
     setWrongFlash(null)
@@ -626,7 +662,7 @@ function MatchingView() {
 
   const handleTopic = (value) => {
     setTopic(value)
-    startRound(value)
+    startRound(value, true)
   }
 
   const handleTermClick = (termId) => {
