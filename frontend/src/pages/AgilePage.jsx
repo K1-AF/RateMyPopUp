@@ -9,6 +9,7 @@ import {
   TOPIC_EXAMS,
   TOPICS,
 } from '../data/agileContent.js'
+import { HARD_EXAMS, TOPIC_TIPS } from '../data/agileHardExams.js'
 import './AgilePage.css'
 
 // ---------------------------------------------------------------------------
@@ -612,15 +613,61 @@ function buildExam() {
 
 // Builds a fixed paper: keeps the authored question order and option order so
 // it reads exactly like the real exam booklet (a-d options stay put).
+// Small deterministic PRNG (mulberry32) so option order is stable per question
+// across re-renders / review, but still varied between questions.
+function seededRandom(seed) {
+  let t = seed >>> 0
+  return () => {
+    t += 0x6d2b79f5
+    let x = Math.imul(t ^ (t >>> 15), 1 | t)
+    x ^= x + Math.imul(x ^ (x >>> 7), 61 | x)
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function hashString(str) {
+  let h = 0
+  for (let i = 0; i < str.length; i += 1) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0
+  }
+  return h
+}
+
+// Some answer formats must stay in their conventional exam order: numbered
+// combinations (1, 2, 3), two-statement true/false, and "all/none of the above".
+function hasFixedOptionOrder(options) {
+  return options.some(
+    (o) =>
+      /^\d(,\s*\d)+$/.test(o.trim()) ||
+      /^Only \d is true$/i.test(o.trim()) ||
+      /^Both 1 and 2 are true$/i.test(o.trim()) ||
+      /^Neither 1 (nor|or) 2 is true$/i.test(o.trim()) ||
+      /of the above/i.test(o),
+  )
+}
+
 function buildFixedExam(paper) {
-  return paper.questions.map((q) => ({
-    id: q.id,
-    topic: q.topic,
-    q: q.q,
-    explain: q.explain,
-    correct: q.correct,
-    options: q.options,
-  }))
+  return paper.questions.map((q) => {
+    let options = q.options
+    // Scatter the correct answer across A-D for free-form questions so there
+    // is no positional pattern, while preserving order-sensitive formats.
+    if (!hasFixedOptionOrder(q.options)) {
+      const rand = seededRandom(hashString(q.id))
+      options = [...q.options]
+      for (let i = options.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(rand() * (i + 1))
+        ;[options[i], options[j]] = [options[j], options[i]]
+      }
+    }
+    return {
+      id: q.id,
+      topic: q.topic,
+      q: q.q,
+      explain: q.explain,
+      correct: q.correct,
+      options,
+    }
+  })
 }
 
 function ExamsView() {
@@ -712,6 +759,23 @@ function ExamsView() {
         {EXAM_CONFIG.passMark}/{EXAM_CONFIG.questionCount} (
         {EXAM_CONFIG.passPercent}%). Closed book.
       </p>
+
+      <h2 className="agile-exams__section">
+        Full mock exams &mdash; real exam style
+      </h2>
+      <p className="agile-exams__note">
+        Four hard, full-length papers modelled exactly on a real AgilePM v3
+        paper: direct questions, &ldquo;identify the missing word(s)&rdquo;,
+        numbered-statement combinations (1, 2, 3 &hellip;) and two-statement
+        true/false items. Correct answers are scattered with no pattern. After
+        submitting you&rsquo;ll get a full strengths &amp; weaknesses breakdown
+        by topic.
+      </p>
+      <div className="agile-exams__grid">
+        {HARD_EXAMS.map((paper) =>
+          renderCard(paper.id, paper.title, () => buildFixedExam(paper)),
+        )}
+      </div>
 
       <h2 className="agile-exams__section">Exam-realistic papers</h2>
       <p className="agile-exams__note">
@@ -989,6 +1053,31 @@ function ExamReview({ exam, answers, result, onExit }) {
   )
   const wrongCount = exam.length - result.score
 
+  // Per-topic performance, used to identify strengths and weaknesses.
+  const topicStats = useMemo(() => {
+    const map = {}
+    exam.forEach((q) => {
+      const t = q.topic
+      if (!map[t]) map[t] = { correct: 0, total: 0 }
+      map[t].total += 1
+      if (answers[q.id] === q.correct) map[t].correct += 1
+    })
+    return Object.entries(map)
+      .map(([topic, s]) => ({
+        topic,
+        correct: s.correct,
+        total: s.total,
+        pct: Math.round((s.correct / s.total) * 100),
+      }))
+      .sort((a, b) => b.pct - a.pct || b.total - a.total)
+  }, [exam, answers])
+
+  const strengths = topicStats.filter((t) => t.pct >= 80)
+  // Weakest first, so the most urgent focus areas are listed at the top.
+  const weaknesses = [...topicStats]
+    .filter((t) => t.pct < 70)
+    .sort((a, b) => a.pct - b.pct)
+
   return (
     <div className="agile-review">
       <div className={`agile-result ${result.passed ? 'is-pass' : 'is-fail'}`}>
@@ -1006,6 +1095,82 @@ function ExamReview({ exam, answers, result, onExit }) {
           </button>
         </div>
       </div>
+
+      <section className="agile-analysis">
+        <h2 className="agile-analysis__title">Performance by topic</h2>
+        <div className="agile-analysis__bars">
+          {topicStats.map((t) => {
+            const band = t.pct >= 80 ? 'good' : t.pct >= 70 ? 'ok' : 'bad'
+            return (
+              <div key={t.topic} className="agile-bar">
+                <div className="agile-bar__label">
+                  <span>{TOPICS[t.topic]}</span>
+                  <span className="agile-bar__score">
+                    {t.correct}/{t.total} · {t.pct}%
+                  </span>
+                </div>
+                <div className="agile-bar__track">
+                  <div
+                    className={`agile-bar__fill agile-bar__fill--${band}`}
+                    style={{ width: `${t.pct}%` }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="agile-analysis__cols">
+          <div className="agile-analysis__col">
+            <h3 className="agile-analysis__h agile-analysis__h--good">
+              Key strengths
+            </h3>
+            {strengths.length ? (
+              <ul className="agile-analysis__list">
+                {strengths.map((t) => (
+                  <li key={t.topic}>
+                    <strong>{TOPICS[t.topic]}</strong> — {t.pct}% (
+                    {t.correct}/{t.total})
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="agile-analysis__empty">
+                No topic hit 80% yet — keep practising to build clear strengths.
+              </p>
+            )}
+          </div>
+
+          <div className="agile-analysis__col">
+            <h3 className="agile-analysis__h agile-analysis__h--bad">
+              Focus areas to improve
+            </h3>
+            {weaknesses.length ? (
+              <ul className="agile-analysis__list">
+                {weaknesses.map((t) => (
+                  <li key={t.topic}>
+                    <strong>{TOPICS[t.topic]}</strong> — {t.pct}% (
+                    {t.correct}/{t.total})
+                    <p className="agile-analysis__tip">{TOPIC_TIPS[t.topic]}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="agile-analysis__empty">
+                Nothing below 70% — excellent coverage across the syllabus!
+              </p>
+            )}
+          </div>
+        </div>
+
+        <p className="agile-analysis__verdict">
+          {result.percent === 100
+            ? 'Full marks — flawless across every topic. You are exam-ready. 🎯'
+            : weaknesses.length === 0
+              ? `Strong, well-rounded result. To reach full marks, re-check the handful of questions you missed below and confirm the exact wording (definitions, timeboxes and the MoSCoW 60/20 numbers).`
+              : `To push toward full marks, prioritise the focus areas above (weakest first), then re-attempt a paper. Read each missed question's explanation below — most marks are lost on exact definitions, role accountabilities, timeboxes and number-based rules.`}
+        </p>
+      </section>
 
       <div className="agile-review__filters">
         <button
