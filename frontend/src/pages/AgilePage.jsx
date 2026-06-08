@@ -1,4 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+import { useAuth } from '../auth/AuthContext.jsx'
+import {
+  isAgileCloudUser,
+  loadAgileExamAttempts,
+  loadAgileProgress,
+  logAgileExamAttempt,
+  saveAgileProgress,
+} from '../utils/agileProgress.js'
 import {
   EXAM_CONFIG,
   EXAM_WEIGHTING,
@@ -52,7 +68,204 @@ function writeStore(key, value) {
   }
 }
 
+const DEFAULT_MATCHING = { correct: 0, wrong: 0, rounds: 0 }
+
+// ---------------------------------------------------------------------------
+// Progress context: single source of truth for matching stats + exam results.
+// For the allowed, logged-in owner account it syncs to Supabase; for everyone
+// else it transparently falls back to localStorage only. Components don't need
+// to know which backend is active.
+// ---------------------------------------------------------------------------
+const AgileProgressContext = createContext(null)
+
+function useAgileProgress() {
+  const ctx = useContext(AgileProgressContext)
+  if (!ctx) {
+    throw new Error('useAgileProgress must be used inside AgileProgressProvider')
+  }
+  return ctx
+}
+
+function AgileProgressProvider({ children }) {
+  const { user } = useAuth()
+  const cloud = isAgileCloudUser(user)
+  const accountId = cloud ? user.id : null
+
+  const [matchingStats, setMatchingStats] = useState(() =>
+    readStore(STORAGE_KEYS.matching, DEFAULT_MATCHING),
+  )
+  const [examResults, setExamResults] = useState(() =>
+    readStore(STORAGE_KEYS.exams, {}),
+  )
+  const [attempts, setAttempts] = useState([])
+  const [loaded, setLoaded] = useState(false)
+  const [cloudError, setCloudError] = useState(false)
+  // Tracks which account's data has been hydrated from the cloud. Cloud writes
+  // are gated on this so we never overwrite remote data with local defaults
+  // before the initial load completes. A ref (not state) avoids any
+  // setState-in-effect during render synchronisation.
+  const loadedAccountRef = useRef(null)
+
+  // Initial hydrate from the cloud (owner only). All state changes happen
+  // inside async callbacks, never synchronously in the effect body.
+  useEffect(() => {
+    if (!cloud) {
+      loadedAccountRef.current = null
+      return undefined
+    }
+    let cancelled = false
+    Promise.all([
+      loadAgileProgress(accountId),
+      loadAgileExamAttempts(accountId),
+    ])
+      .then(([progress, history]) => {
+        if (cancelled) return
+        if (progress) {
+          setMatchingStats(progress.matching_stats ?? DEFAULT_MATCHING)
+          setExamResults(progress.exam_results ?? {})
+        }
+        setAttempts(history ?? [])
+        loadedAccountRef.current = accountId
+        setLoaded(true)
+        setCloudError(false)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setCloudError(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [cloud, accountId])
+
+  // Always keep a local cache so progress survives even without the cloud.
+  useEffect(() => {
+    writeStore(STORAGE_KEYS.matching, matchingStats)
+  }, [matchingStats])
+  useEffect(() => {
+    writeStore(STORAGE_KEYS.exams, examResults)
+  }, [examResults])
+
+  // Mirror aggregate progress to the cloud whenever it changes (owner only),
+  // but only after the initial load for this account has completed.
+  useEffect(() => {
+    if (!cloud || loadedAccountRef.current !== accountId) return undefined
+    let cancelled = false
+    saveAgileProgress(accountId, { matchingStats, examResults })
+      .then((ok) => {
+        if (!cancelled) setCloudError(!ok)
+      })
+      .catch(() => {
+        if (!cancelled) setCloudError(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [cloud, accountId, loaded, matchingStats, examResults])
+
+  const syncStatus = cloudError ? 'error' : loaded ? 'synced' : 'loading'
+
+  // Record a completed exam: update the aggregate map and append to history.
+  const recordExam = useCallback(
+    (examKey, title, result) => {
+      setExamResults((prev) => {
+        const prevBest = prev[examKey]?.bestPercent ?? -1
+        return {
+          ...prev,
+          [examKey]: {
+            lastPercent: result.percent,
+            lastScore: result.score,
+            total: result.total,
+            bestPercent: Math.max(prevBest, result.percent),
+            attempts: (prev[examKey]?.attempts ?? 0) + 1,
+            passed: result.passed,
+          },
+        }
+      })
+      if (cloud) {
+        const attempt = {
+          examKey,
+          title,
+          percent: result.percent,
+          score: result.score,
+          total: result.total,
+          passed: result.passed,
+        }
+        // Optimistically show it, then persist.
+        setAttempts((prev) =>
+          [
+            { id: `temp-${Date.now()}`, created_at: new Date().toISOString(), ...attempt },
+            ...prev,
+          ].slice(0, 12),
+        )
+        logAgileExamAttempt(accountId, attempt).catch(() => {})
+      }
+    },
+    [cloud, accountId],
+  )
+
+  const resetMatchingStats = useCallback(() => {
+    setMatchingStats({ ...DEFAULT_MATCHING })
+  }, [])
+
+  const value = useMemo(
+    () => ({
+      cloud,
+      syncStatus,
+      matchingStats,
+      setMatchingStats,
+      examResults,
+      recordExam,
+      resetMatchingStats,
+      attempts,
+    }),
+    [
+      cloud,
+      syncStatus,
+      matchingStats,
+      examResults,
+      recordExam,
+      resetMatchingStats,
+      attempts,
+    ],
+  )
+
+  return (
+    <AgileProgressContext.Provider value={value}>
+      {children}
+    </AgileProgressContext.Provider>
+  )
+}
+
+// Small badge that reflects where progress is being stored.
+function SyncBadge() {
+  const { cloud, syncStatus } = useAgileProgress()
+  if (!cloud) return null
+  const label =
+    syncStatus === 'loading'
+      ? 'Loading…'
+      : syncStatus === 'saving'
+        ? 'Saving…'
+        : syncStatus === 'error'
+          ? 'Sync error'
+          : 'Saved to cloud'
+  return (
+    <span className={`agile-sync agile-sync--${syncStatus}`} title="Your progress is saved to your account">
+      <span className="agile-sync__dot" aria-hidden />
+      {label}
+    </span>
+  )
+}
+
 export default function AgilePage() {
+  return (
+    <AgileProgressProvider>
+      <AgilePageInner />
+    </AgileProgressProvider>
+  )
+}
+
+function AgilePageInner() {
   const [mode, setMode] = useState('home')
 
   // Keep the browser tab title clear while studying; restore on unmount.
@@ -95,6 +308,7 @@ export default function AgilePage() {
               Mock Exams
             </TabButton>
           </nav>
+          <SyncBadge />
         </div>
       </header>
 
@@ -394,14 +608,13 @@ function MatchingView() {
   const [matched, setMatched] = useState(() => new Set())
   const [wrongFlash, setWrongFlash] = useState(null) // {termId, defId}
   const [roundWrong, setRoundWrong] = useState(0)
-  const [stats, setStats] = useState(() =>
-    readStore(STORAGE_KEYS.matching, { correct: 0, wrong: 0, rounds: 0 }),
-  )
-
-  // Persist cumulative stats whenever they change.
-  useEffect(() => {
-    writeStore(STORAGE_KEYS.matching, stats)
-  }, [stats])
+  // Cumulative stats live in the progress context (cloud-synced for the owner,
+  // localStorage-backed for everyone else).
+  const {
+    matchingStats: stats,
+    setMatchingStats: setStats,
+    resetMatchingStats,
+  } = useAgileProgress()
 
   const startRound = useCallback((selectedTopic) => {
     setRound(createRound(selectedTopic))
@@ -447,9 +660,7 @@ function MatchingView() {
   const roundComplete = round && matched.size === round.pairs.length
 
   const resetStats = () => {
-    const fresh = { correct: 0, wrong: 0, rounds: 0 }
-    setStats(fresh)
-    writeStore(STORAGE_KEYS.matching, fresh)
+    resetMatchingStats()
   }
 
   const total = stats.correct + stats.wrong
@@ -673,27 +884,11 @@ function buildFixedExam(paper) {
 function ExamsView() {
   // active = { key, title, build } describing the paper to run.
   const [active, setActive] = useState(null)
-  const [results, setResults] = useState(() =>
-    readStore(STORAGE_KEYS.exams, {}),
-  )
+  const { examResults: results, recordExam, cloud, attempts } =
+    useAgileProgress()
 
-  const onFinish = (examKey, result) => {
-    setResults((prev) => {
-      const prevBest = prev[examKey]?.bestPercent ?? -1
-      const next = {
-        ...prev,
-        [examKey]: {
-          lastPercent: result.percent,
-          lastScore: result.score,
-          total: result.total,
-          bestPercent: Math.max(prevBest, result.percent),
-          attempts: (prev[examKey]?.attempts ?? 0) + 1,
-          passed: result.passed,
-        },
-      }
-      writeStore(STORAGE_KEYS.exams, next)
-      return next
-    })
+  const onFinish = (examKey, title, result) => {
+    recordExam(examKey, title, result)
   }
 
   if (active) {
@@ -858,6 +1053,47 @@ function ExamsView() {
           renderCard(no, `Mock Exam ${no}`, () => buildExam()),
         )}
       </div>
+
+      {cloud && (
+        <>
+          <h2 className="agile-exams__section">Recent attempts</h2>
+          <p className="agile-exams__note">
+            Your completed papers, saved to your account so you can track how
+            you&rsquo;re improving over time.
+          </p>
+          {attempts.length ? (
+            <ol className="agile-history">
+              {attempts.map((a) => (
+                <li
+                  key={a.id}
+                  className={`agile-history__row ${
+                    a.passed ? 'is-pass' : 'is-fail'
+                  }`}
+                >
+                  <span className="agile-history__title">{a.title}</span>
+                  <span className="agile-history__score">
+                    {a.score}/{a.total} · {a.percent}%
+                  </span>
+                  <span
+                    className={`agile-pill ${
+                      a.passed ? 'agile-pill--pass' : 'agile-pill--fail'
+                    }`}
+                  >
+                    {a.passed ? 'PASS' : 'NOT YET'}
+                  </span>
+                  <span className="agile-history__date">
+                    {new Date(a.created_at).toLocaleString()}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="agile-exam-card__none">
+              No attempts saved yet — finish a paper and it will appear here.
+            </p>
+          )}
+        </>
+      )}
     </div>
   )
 }
@@ -900,8 +1136,8 @@ function ExamRunner({ examKey, title, build, onExit, onFinish }) {
     if (finishedRef.current) return
     finishedRef.current = true
     setSubmitted(true)
-    onFinish(examKey, result)
-  }, [examKey, onFinish, result])
+    onFinish(examKey, title, result)
+  }, [examKey, title, onFinish, result])
 
   // Countdown timer; auto-submits when it reaches zero. The state changes
   // happen inside the timeout callback (not the effect body) to avoid
