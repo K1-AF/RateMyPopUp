@@ -6,6 +6,7 @@ import {
   MATCHING_PAIRS,
   QUESTION_BANK,
   REALISTIC_EXAMS,
+  TOPIC_EXAMS,
   TOPICS,
 } from '../data/agileContent.js'
 import './AgilePage.css'
@@ -637,6 +638,7 @@ function ExamsView() {
         [examKey]: {
           lastPercent: result.percent,
           lastScore: result.score,
+          total: result.total,
           bestPercent: Math.max(prevBest, result.percent),
           attempts: (prev[examKey]?.attempts ?? 0) + 1,
           passed: result.passed,
@@ -681,7 +683,8 @@ function ExamsView() {
               Best: <strong>{r.bestPercent}%</strong>
             </li>
             <li>
-              Last: {r.lastScore}/{EXAM_CONFIG.questionCount} ({r.lastPercent}%)
+              Last: {r.lastScore}/{r.total ?? EXAM_CONFIG.questionCount} (
+              {r.lastPercent}%)
             </li>
             <li>Attempts: {r.attempts}</li>
           </ul>
@@ -723,6 +726,64 @@ function ExamsView() {
         )}
       </div>
 
+      <h2 className="agile-exams__section">Topic-focused papers</h2>
+      <p className="agile-exams__note">
+        Deep-dive papers where every question targets a single syllabus area.
+        The timer and pass mark scale to the number of questions (still 60% to
+        pass).
+      </p>
+      <div className="agile-exams__grid">
+        {TOPIC_EXAMS.map((paper) => (
+          <div key={paper.id} className="agile-exam-card">
+            <div className="agile-exam-card__head">
+              <h2>{paper.title}</h2>
+              {results[paper.id]?.passed != null && (
+                <span
+                  className={`agile-pill ${
+                    results[paper.id].passed
+                      ? 'agile-pill--pass'
+                      : 'agile-pill--fail'
+                  }`}
+                >
+                  {results[paper.id].passed ? 'PASSED' : 'NOT YET'}
+                </span>
+              )}
+            </div>
+            <p className="agile-exam-card__tag">
+              {TOPICS[paper.topic]} · {paper.questions.length} questions
+            </p>
+            {results[paper.id] ? (
+              <ul className="agile-exam-card__stats">
+                <li>
+                  Best: <strong>{results[paper.id].bestPercent}%</strong>
+                </li>
+                <li>
+                  Last: {results[paper.id].lastScore}/
+                  {results[paper.id].total ?? paper.questions.length} (
+                  {results[paper.id].lastPercent}%)
+                </li>
+                <li>Attempts: {results[paper.id].attempts}</li>
+              </ul>
+            ) : (
+              <p className="agile-exam-card__none">Not attempted yet.</p>
+            )}
+            <button
+              type="button"
+              className="agile-btn agile-btn--primary"
+              onClick={() =>
+                setActive({
+                  key: paper.id,
+                  title: paper.title,
+                  build: () => buildFixedExam(paper),
+                })
+              }
+            >
+              {results[paper.id] ? 'Retake' : 'Start'}
+            </button>
+          </div>
+        ))}
+      </div>
+
       <h2 className="agile-exams__section">Randomised practice papers</h2>
       <p className="agile-exams__note">
         Four papers assembled from the wider question bank, weighted across
@@ -740,12 +801,20 @@ function ExamsView() {
 function ExamRunner({ examKey, title, build, onExit, onFinish }) {
   // The paper is built once per attempt.
   const [exam] = useState(() => build())
+  // Pass mark and timer scale to the actual paper length, so shorter
+  // topic-focused papers keep the same 60% bar and proportional time as the
+  // full 50-question / 40-minute exam.
+  const total = exam.length
+  const passMark = Math.ceil((total * EXAM_CONFIG.passPercent) / 100)
+  const durationMinutes = Math.max(
+    1,
+    Math.round((total * EXAM_CONFIG.durationMinutes) / EXAM_CONFIG.questionCount),
+  )
+
   const [answers, setAnswers] = useState({}) // { questionId: optionText }
   const [current, setCurrent] = useState(0)
   const [submitted, setSubmitted] = useState(false)
-  const [secondsLeft, setSecondsLeft] = useState(
-    EXAM_CONFIG.durationMinutes * 60,
-  )
+  const [secondsLeft, setSecondsLeft] = useState(durationMinutes * 60)
   const finishedRef = useRef(false)
 
   const result = useMemo(() => {
@@ -757,9 +826,11 @@ function ExamRunner({ examKey, title, build, onExit, onFinish }) {
     return {
       score,
       percent,
-      passed: score >= EXAM_CONFIG.passMark,
+      total: exam.length,
+      passMark,
+      passed: score >= passMark,
     }
-  }, [answers, exam])
+  }, [answers, exam, passMark])
 
   const handleSubmit = useCallback(() => {
     if (finishedRef.current) return
@@ -926,7 +997,7 @@ function ExamReview({ exam, answers, result, onExit }) {
           <strong>{result.passed ? 'PASS' : 'NOT YET'}</strong>
           <span>
             {result.score}/{exam.length} correct · {wrongCount} wrong · need{' '}
-            {EXAM_CONFIG.passMark} to pass
+            {result.passMark} to pass
           </span>
         </div>
         <div className="agile-result__actions">
