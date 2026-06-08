@@ -490,6 +490,19 @@
   max-width: 760px;
   line-height: 1.55;
 }
+.agile-exams__section {
+  font-size: 1.15rem;
+  margin: 28px 0 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ag-border);
+}
+.agile-exams__note {
+  color: var(--ag-muted);
+  margin: 0 0 16px;
+  max-width: 760px;
+  line-height: 1.55;
+  font-size: 0.9rem;
+}
 .agile-exams__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

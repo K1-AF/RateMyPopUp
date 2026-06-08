@@ -5,6 +5,7 @@ import {
   FLASHCARDS,
   MATCHING_PAIRS,
   QUESTION_BANK,
+  REALISTIC_EXAMS,
   TOPICS,
 } from '../data/agileContent.js'
 import './AgilePage.css'
@@ -173,8 +174,8 @@ function HomeView({ onPick }) {
           </span>
           <h2>Mock Exams</h2>
           <p>
-            4 mock papers modelled on the real exam: 50 questions, 40 minutes,
-            60% to pass, weighted across topics.
+            2 fixed exam-realistic papers plus 4 randomised practice papers: 50
+            questions, 40 minutes, 60% to pass.
           </p>
         </button>
       </div>
@@ -608,22 +609,36 @@ function buildExam() {
   }))
 }
 
+// Builds a fixed paper: keeps the authored question order and option order so
+// it reads exactly like the real exam booklet (a-d options stay put).
+function buildFixedExam(paper) {
+  return paper.questions.map((q) => ({
+    id: q.id,
+    topic: q.topic,
+    q: q.q,
+    explain: q.explain,
+    correct: q.correct,
+    options: q.options,
+  }))
+}
+
 function ExamsView() {
-  const [active, setActive] = useState(null) // exam number 1-4
+  // active = { key, title, build } describing the paper to run.
+  const [active, setActive] = useState(null)
   const [results, setResults] = useState(() =>
     readStore(STORAGE_KEYS.exams, {}),
   )
 
-  const onFinish = (examNo, result) => {
+  const onFinish = (examKey, result) => {
     setResults((prev) => {
-      const prevBest = prev[examNo]?.bestPercent ?? -1
+      const prevBest = prev[examKey]?.bestPercent ?? -1
       const next = {
         ...prev,
-        [examNo]: {
+        [examKey]: {
           lastPercent: result.percent,
           lastScore: result.score,
           bestPercent: Math.max(prevBest, result.percent),
-          attempts: (prev[examNo]?.attempts ?? 0) + 1,
+          attempts: (prev[examKey]?.attempts ?? 0) + 1,
           passed: result.passed,
         },
       }
@@ -635,10 +650,52 @@ function ExamsView() {
   if (active) {
     return (
       <ExamRunner
-        examNo={active}
+        examKey={active.key}
+        title={active.title}
+        build={active.build}
         onExit={() => setActive(null)}
         onFinish={onFinish}
       />
+    )
+  }
+
+  const renderCard = (key, title, build) => {
+    const r = results[key]
+    return (
+      <div key={key} className="agile-exam-card">
+        <div className="agile-exam-card__head">
+          <h2>{title}</h2>
+          {r?.passed != null && (
+            <span
+              className={`agile-pill ${
+                r.passed ? 'agile-pill--pass' : 'agile-pill--fail'
+              }`}
+            >
+              {r.passed ? 'PASSED' : 'NOT YET'}
+            </span>
+          )}
+        </div>
+        {r ? (
+          <ul className="agile-exam-card__stats">
+            <li>
+              Best: <strong>{r.bestPercent}%</strong>
+            </li>
+            <li>
+              Last: {r.lastScore}/{EXAM_CONFIG.questionCount} ({r.lastPercent}%)
+            </li>
+            <li>Attempts: {r.attempts}</li>
+          </ul>
+        ) : (
+          <p className="agile-exam-card__none">Not attempted yet.</p>
+        )}
+        <button
+          type="button"
+          className="agile-btn agile-btn--primary"
+          onClick={() => setActive({ key, title, build })}
+        >
+          {r ? 'Retake' : 'Start'}
+        </button>
+      </div>
     )
   }
 
@@ -646,61 +703,43 @@ function ExamsView() {
     <div className="agile-exams">
       <h1 className="agile-exams__title">Mock Exams</h1>
       <p className="agile-exams__lede">
-        Each paper has {EXAM_CONFIG.questionCount} questions and a{' '}
-        {EXAM_CONFIG.durationMinutes}-minute timer. You need{' '}
+        Every paper follows the real exam format:{' '}
+        {EXAM_CONFIG.questionCount} questions, a{' '}
+        {EXAM_CONFIG.durationMinutes}-minute timer, and a pass mark of{' '}
         {EXAM_CONFIG.passMark}/{EXAM_CONFIG.questionCount} (
-        {EXAM_CONFIG.passPercent}%) to pass. Questions are drawn randomly and
-        weighted across syllabus topics, so every attempt differs.
+        {EXAM_CONFIG.passPercent}%). Closed book.
+      </p>
+
+      <h2 className="agile-exams__section">Exam-realistic papers</h2>
+      <p className="agile-exams__note">
+        Two fixed, exam-standard papers written in the real APMG question style
+        (direct questions, &ldquo;identify the missing word(s)&rdquo;,
+        &ldquo;which statement is true&rdquo;) and presented in a set order with
+        fixed A&ndash;D options &mdash; just like sitting the actual exam.
       </p>
       <div className="agile-exams__grid">
-        {[1, 2, 3, 4].map((no) => {
-          const r = results[no]
-          return (
-            <div key={no} className="agile-exam-card">
-              <div className="agile-exam-card__head">
-                <h2>Mock Exam {no}</h2>
-                {r?.passed != null && (
-                  <span
-                    className={`agile-pill ${
-                      r.passed ? 'agile-pill--pass' : 'agile-pill--fail'
-                    }`}
-                  >
-                    {r.passed ? 'PASSED' : 'NOT YET'}
-                  </span>
-                )}
-              </div>
-              {r ? (
-                <ul className="agile-exam-card__stats">
-                  <li>
-                    Best: <strong>{r.bestPercent}%</strong>
-                  </li>
-                  <li>
-                    Last: {r.lastScore}/{EXAM_CONFIG.questionCount} (
-                    {r.lastPercent}%)
-                  </li>
-                  <li>Attempts: {r.attempts}</li>
-                </ul>
-              ) : (
-                <p className="agile-exam-card__none">Not attempted yet.</p>
-              )}
-              <button
-                type="button"
-                className="agile-btn agile-btn--primary"
-                onClick={() => setActive(no)}
-              >
-                {r ? 'Retake' : 'Start'} Exam {no}
-              </button>
-            </div>
-          )
-        })}
+        {REALISTIC_EXAMS.map((paper) =>
+          renderCard(paper.id, paper.title, () => buildFixedExam(paper)),
+        )}
+      </div>
+
+      <h2 className="agile-exams__section">Randomised practice papers</h2>
+      <p className="agile-exams__note">
+        Four papers assembled from the wider question bank, weighted across
+        syllabus topics and reshuffled every attempt for endless practice.
+      </p>
+      <div className="agile-exams__grid">
+        {[1, 2, 3, 4].map((no) =>
+          renderCard(no, `Mock Exam ${no}`, () => buildExam()),
+        )}
       </div>
     </div>
   )
 }
 
-function ExamRunner({ examNo, onExit, onFinish }) {
+function ExamRunner({ examKey, title, build, onExit, onFinish }) {
   // The paper is built once per attempt.
-  const [exam] = useState(() => buildExam())
+  const [exam] = useState(() => build())
   const [answers, setAnswers] = useState({}) // { questionId: optionText }
   const [current, setCurrent] = useState(0)
   const [submitted, setSubmitted] = useState(false)
@@ -726,8 +765,8 @@ function ExamRunner({ examNo, onExit, onFinish }) {
     if (finishedRef.current) return
     finishedRef.current = true
     setSubmitted(true)
-    onFinish(examNo, result)
-  }, [examNo, onFinish, result])
+    onFinish(examKey, result)
+  }, [examKey, onFinish, result])
 
   // Countdown timer; auto-submits when it reaches zero. The state changes
   // happen inside the timeout callback (not the effect body) to avoid
@@ -767,7 +806,7 @@ function ExamRunner({ examNo, onExit, onFinish }) {
         </button>
         <div className="agile-runner__meta">
           <span>
-            Mock Exam {examNo} · Q{current + 1}/{exam.length}
+            {title} · Q{current + 1}/{exam.length}
           </span>
           <span>Answered: {answeredCount}/{exam.length}</span>
         </div>
