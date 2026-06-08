@@ -937,3 +937,94 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- Cloud sync badge ---- */
+.agile-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.agile-sync__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9ca3af;
+}
+.agile-sync--synced .agile-sync__dot {
+  background: #22c55e;
+}
+.agile-sync--saving .agile-sync__dot,
+.agile-sync--loading .agile-sync__dot {
+  background: #f59e0b;
+  animation: agile-pulse 1s ease-in-out infinite;
+}
+.agile-sync--error {
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.5);
+}
+.agile-sync--error .agile-sync__dot {
+  background: #ef4444;
+}
+@keyframes agile-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ---- Exam attempt history ---- */
+.agile-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.agile-history__row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid #6b7280;
+}
+.agile-history__row.is-pass {
+  border-left-color: #22c55e;
+}
+.agile-history__row.is-fail {
+  border-left-color: #ef4444;
+}
+.agile-history__title {
+  font-weight: 600;
+}
+.agile-history__score {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+}
+.agile-history__date {
+  font-size: 0.8rem;
+  opacity: 0.65;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .agile-history__row {
+    grid-template-columns: 1fr auto;
+    row-gap: 4px;
+  }
+  .agile-history__date {
+    grid-column: 1 / -1;
+  }
+}
