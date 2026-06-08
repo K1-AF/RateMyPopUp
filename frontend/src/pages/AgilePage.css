@@ -555,6 +555,14 @@
   font-size: 0.88rem;
   margin: 0;
 }
+.agile-exam-card__tag {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ag-accent);
+}
 .agile-exam-card .agile-btn {
   margin-top: auto;
 }
