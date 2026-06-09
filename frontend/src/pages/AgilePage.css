@@ -1028,3 +1028,93 @@
     grid-column: 1 / -1;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Zen Mode
+   --------------------------------------------------------------------------- */
+.agile-zen {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.agile-zen__stats {
+  position: sticky;
+  top: 8px;
+  z-index: 2;
+}
+
+/* Reveal states for the answer options after the user picks. */
+.agile-option:disabled {
+  cursor: default;
+}
+.agile-option.is-correct {
+  border-color: var(--ag-good);
+  background: rgba(46, 204, 143, 0.16);
+  color: var(--ag-good);
+  font-weight: 600;
+}
+.agile-option.is-correct .agile-option__radio {
+  border-color: var(--ag-good);
+  background: var(--ag-good);
+  box-shadow: inset 0 0 0 3px var(--ag-card-2);
+}
+.agile-option.is-wrong {
+  border-color: var(--ag-bad);
+  background: rgba(255, 93, 108, 0.16);
+  color: var(--ag-bad);
+  font-weight: 600;
+}
+.agile-option.is-wrong .agile-option__radio {
+  border-color: var(--ag-bad);
+  background: var(--ag-bad);
+  box-shadow: inset 0 0 0 3px var(--ag-card-2);
+}
+
+.agile-zen__feedback {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--ag-border);
+  background: var(--ag-card-2);
+}
+.agile-zen__feedback.is-right {
+  border-color: rgba(46, 204, 143, 0.5);
+}
+.agile-zen__feedback.is-wrong {
+  border-color: rgba(255, 93, 108, 0.5);
+}
+.agile-zen__feedback > strong {
+  display: block;
+  margin-bottom: 6px;
+}
+.agile-zen__feedback.is-right > strong {
+  color: var(--ag-good);
+}
+.agile-zen__feedback.is-wrong > strong {
+  color: var(--ag-bad);
+}
+.agile-zen__answer {
+  margin: 0 0 6px;
+  font-size: 0.92rem;
+  color: var(--ag-muted);
+}
+.agile-zen__answer span {
+  color: var(--ag-good);
+  font-weight: 600;
+}
+.agile-zen__explain {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--ag-text);
+  line-height: 1.5;
+}
+.agile-zen__nav {
+  display: flex;
+  justify-content: flex-end;
+}
+.agile-zen__hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ag-muted);
+  line-height: 1.5;
+}

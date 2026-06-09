@@ -26,6 +26,7 @@ import {
   TOPICS,
 } from '../data/agileContent.js'
 import { HARD_EXAMS, TOPIC_TIPS } from '../data/agileHardExams.js'
+import { ZEN_QUESTIONS } from '../data/agileZenQuestions.js'
 import './AgilePage.css'
 
 // ---------------------------------------------------------------------------
@@ -50,6 +51,48 @@ function shuffle(input) {
   }
   return arr
 }
+
+// Build the Zen-mode question pool: every authored question from the dedicated
+// Zen bank plus the general bank and all fixed exam papers, de-duplicated by
+// normalised question text. This yields a large (~750) varied pool that powers
+// the endless practice mode. Computed once at module load.
+function normaliseQuestion(text) {
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[^a-z0-9 ]/g, '')
+    .trim()
+}
+
+function buildZenPool() {
+  const all = [
+    ...ZEN_QUESTIONS,
+    ...QUESTION_BANK,
+    ...REALISTIC_EXAMS.flatMap((e) => e.questions),
+    ...TOPIC_EXAMS.flatMap((e) => e.questions),
+    ...HARD_EXAMS.flatMap((e) => e.questions),
+  ]
+  const seen = new Set()
+  const pool = []
+  for (const q of all) {
+    const key = normaliseQuestion(q.q)
+    if (seen.has(key)) continue
+    seen.add(key)
+    // Keep only the fields Zen mode needs, with a guaranteed-unique id.
+    pool.push({
+      id: q.id,
+      topic: q.topic,
+      q: q.q,
+      options: q.options,
+      correct: q.correct,
+      explain: q.explain,
+    })
+  }
+  return pool
+}
+
+const ZEN_POOL = buildZenPool()
+const ZEN_POOL_SIZE = ZEN_POOL.length
 
 // Safe localStorage helpers (wrapped so private-mode/quota errors never crash).
 function readStore(key, fallback) {
@@ -307,6 +350,9 @@ function AgilePageInner() {
             <TabButton active={mode === 'exams'} onClick={() => setMode('exams')}>
               Mock Exams
             </TabButton>
+            <TabButton active={mode === 'zen'} onClick={() => setMode('zen')}>
+              Zen Mode
+            </TabButton>
           </nav>
           <SyncBadge />
         </div>
@@ -317,12 +363,13 @@ function AgilePageInner() {
         {mode === 'flashcards' && <FlashcardsView />}
         {mode === 'matching' && <MatchingView />}
         {mode === 'exams' && <ExamsView />}
+        {mode === 'zen' && <ZenView />}
       </main>
 
       <footer className="agile-footer">
         Private study area · {FLASHCARDS.length} flashcards ·{' '}
-        {MATCHING_PAIRS.length} matching pairs · {QUESTION_BANK.length}-question
-        bank · Good luck on the exam.
+        {MATCHING_PAIRS.length} matching pairs · {ZEN_POOL_SIZE}-question Zen pool
+        · Good luck on the exam.
       </footer>
     </div>
   )
@@ -392,6 +439,21 @@ function HomeView({ onPick }) {
           <p>
             2 fixed exam-realistic papers plus 4 randomised practice papers: 50
             questions, 40 minutes, 60% to pass.
+          </p>
+        </button>
+        <button
+          type="button"
+          className="agile-card"
+          onClick={() => onPick('zen')}
+        >
+          <span className="agile-card__emoji" aria-hidden>
+            🧘
+          </span>
+          <h2>Zen Mode</h2>
+          <p>
+            Endless exam-style questions from a {ZEN_POOL_SIZE}-question pool.
+            Instant feedback, a live right/wrong/accuracy tally, and a full
+            per-topic breakdown when you end the session.
           </p>
         </button>
       </div>
@@ -819,6 +881,370 @@ function MatchingView() {
             })}
           </div>
         </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Zen Mode — endless exam-style practice with instant feedback
+// ---------------------------------------------------------------------------
+function ZenView() {
+  // One shuffled pass through the whole pool; we reshuffle when it's exhausted
+  // so the session can run indefinitely without immediate repeats.
+  const [queue, setQueue] = useState(() => shuffle(ZEN_POOL))
+  const [idx, setIdx] = useState(0)
+  const [selected, setSelected] = useState(null)
+  const [revealed, setRevealed] = useState(false)
+  const [history, setHistory] = useState([]) // { id, topic, q, options, correct, chosen, isRight }
+  const [ended, setEnded] = useState(false)
+
+  const { recordExam } = useAgileProgress()
+
+  const current = queue[idx]
+  // Shuffle each question's options once (stable until the question changes).
+  const options = useMemo(
+    () => (current ? shuffle(current.options) : []),
+    [current],
+  )
+
+  const right = history.filter((h) => h.isRight).length
+  const answered = history.length
+  const wrong = answered - right
+  const accuracy = answered ? Math.round((right / answered) * 100) : 0
+
+  const choose = (opt) => {
+    if (revealed) return
+    const isRight = opt === current.correct
+    setSelected(opt)
+    setRevealed(true)
+    setHistory((h) => [
+      ...h,
+      {
+        id: current.id,
+        topic: current.topic,
+        q: current.q,
+        options: current.options,
+        correct: current.correct,
+        chosen: opt,
+        isRight,
+      },
+    ])
+  }
+
+  const next = () => {
+    setSelected(null)
+    setRevealed(false)
+    setIdx((i) => {
+      const n = i + 1
+      if (n >= queue.length) {
+        // Exhausted the pool — reshuffle for an endless stream.
+        setQueue(shuffle(ZEN_POOL))
+        return 0
+      }
+      return n
+    })
+  }
+
+  const endSession = () => {
+    // Persist the session as an attempt (cloud owner) / aggregate result.
+    if (answered > 0) {
+      recordExam('zen', 'Zen practice session', {
+        percent: accuracy,
+        score: right,
+        total: answered,
+        passMark: Math.ceil(answered * 0.6),
+        passed: accuracy >= 60,
+      })
+    }
+    setEnded(true)
+  }
+
+  const restart = () => {
+    setQueue(shuffle(ZEN_POOL))
+    setIdx(0)
+    setSelected(null)
+    setRevealed(false)
+    setHistory([])
+    setEnded(false)
+  }
+
+  if (ended) {
+    return <ZenReview history={history} onRestart={restart} />
+  }
+
+  return (
+    <div className="agile-zen">
+      <div className="agile-statbar agile-zen__stats">
+        <div className="agile-statbar__item agile-statbar__item--good">
+          <span className="agile-statbar__num">{right}</span>
+          <span className="agile-statbar__label">Right</span>
+        </div>
+        <div className="agile-statbar__item agile-statbar__item--bad">
+          <span className="agile-statbar__num">{wrong}</span>
+          <span className="agile-statbar__label">Wrong</span>
+        </div>
+        <div className="agile-statbar__item">
+          <span className="agile-statbar__num">{accuracy}%</span>
+          <span className="agile-statbar__label">Accuracy</span>
+        </div>
+        <div className="agile-statbar__item">
+          <span className="agile-statbar__num">{answered}</span>
+          <span className="agile-statbar__label">Answered</span>
+        </div>
+        <button
+          type="button"
+          className="agile-btn agile-btn--success"
+          onClick={endSession}
+        >
+          End session
+        </button>
+      </div>
+
+      <div className="agile-question">
+        <span className="agile-question__topic">{TOPICS[current.topic]}</span>
+        <h2 className="agile-question__text">{current.q}</h2>
+        <div className="agile-options">
+          {options.map((opt) => {
+            const isChosen = selected === opt
+            const isAnswer = current.correct === opt
+            const cls = [
+              'agile-option',
+              revealed && isAnswer ? 'is-correct' : '',
+              revealed && isChosen && !isAnswer ? 'is-wrong' : '',
+              !revealed && isChosen ? 'is-selected' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')
+            return (
+              <button
+                key={opt}
+                type="button"
+                className={cls}
+                onClick={() => choose(opt)}
+                disabled={revealed}
+              >
+                <span className="agile-option__radio" aria-hidden />
+                <span>{opt}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {revealed && (
+          <div
+            className={`agile-zen__feedback ${
+              selected === current.correct ? 'is-right' : 'is-wrong'
+            }`}
+          >
+            <strong>
+              {selected === current.correct ? 'Correct ✓' : 'Not quite ✗'}
+            </strong>
+            {selected !== current.correct && (
+              <p className="agile-zen__answer">
+                Answer: <span>{current.correct}</span>
+              </p>
+            )}
+            <p className="agile-zen__explain">{current.explain}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="agile-zen__nav">
+        {!revealed ? (
+          <p className="agile-zen__hint">
+            Pick an answer to see instant feedback. Keep going as long as you
+            like, then press <strong>End session</strong> for your per-topic
+            breakdown.
+          </p>
+        ) : (
+          <button
+            type="button"
+            className="agile-btn agile-btn--primary"
+            onClick={next}
+          >
+            Next question ›
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// End-of-session feedback: per-topic accuracy, strengths, focus areas and a
+// review of everything answered incorrectly.
+function ZenReview({ history, onRestart }) {
+  const answered = history.length
+  const right = history.filter((h) => h.isRight).length
+  const accuracy = answered ? Math.round((right / answered) * 100) : 0
+  const passed = accuracy >= 60
+
+  const topicStats = useMemo(() => {
+    const map = {}
+    history.forEach((h) => {
+      if (!map[h.topic]) map[h.topic] = { correct: 0, total: 0 }
+      map[h.topic].total += 1
+      if (h.isRight) map[h.topic].correct += 1
+    })
+    return Object.entries(map)
+      .map(([topic, s]) => ({
+        topic,
+        correct: s.correct,
+        total: s.total,
+        pct: Math.round((s.correct / s.total) * 100),
+      }))
+      .sort((a, b) => b.pct - a.pct || b.total - a.total)
+  }, [history])
+
+  const strengths = topicStats.filter((t) => t.pct >= 80)
+  const weaknesses = [...topicStats]
+    .filter((t) => t.pct < 70)
+    .sort((a, b) => a.pct - b.pct)
+  const wrong = history.filter((h) => !h.isRight)
+
+  if (answered === 0) {
+    return (
+      <div className="agile-review">
+        <p className="agile-empty">
+          You ended the session without answering any questions. Start again and
+          answer a few to get your per-topic breakdown.
+        </p>
+        <button type="button" className="agile-btn agile-btn--primary" onClick={onRestart}>
+          Start a new session
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="agile-review">
+      <div className={`agile-result ${passed ? 'is-pass' : 'is-fail'}`}>
+        <div className="agile-result__score">{accuracy}%</div>
+        <div className="agile-result__detail">
+          <strong>Session complete</strong>
+          <span>
+            {right}/{answered} correct · {answered - right} wrong · {accuracy}%
+            accuracy
+          </span>
+        </div>
+        <div className="agile-result__actions">
+          <button type="button" className="agile-btn agile-btn--primary" onClick={onRestart}>
+            New session
+          </button>
+        </div>
+      </div>
+
+      <section className="agile-analysis">
+        <h2 className="agile-analysis__title">Performance by topic</h2>
+        <div className="agile-analysis__bars">
+          {topicStats.map((t) => {
+            const band = t.pct >= 80 ? 'good' : t.pct >= 70 ? 'ok' : 'bad'
+            return (
+              <div key={t.topic} className="agile-bar">
+                <div className="agile-bar__label">
+                  <span>{TOPICS[t.topic]}</span>
+                  <span className="agile-bar__score">
+                    {t.correct}/{t.total} · {t.pct}%
+                  </span>
+                </div>
+                <div className="agile-bar__track">
+                  <div
+                    className={`agile-bar__fill agile-bar__fill--${band}`}
+                    style={{ width: `${t.pct}%` }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="agile-analysis__cols">
+          <div className="agile-analysis__col">
+            <h3 className="agile-analysis__h agile-analysis__h--good">
+              Key strengths
+            </h3>
+            {strengths.length ? (
+              <ul className="agile-analysis__list">
+                {strengths.map((t) => (
+                  <li key={t.topic}>
+                    <strong>{TOPICS[t.topic]}</strong> — {t.pct}% ({t.correct}/
+                    {t.total})
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="agile-analysis__empty">
+                No topic hit 80% yet — keep practising to build clear strengths.
+              </p>
+            )}
+          </div>
+
+          <div className="agile-analysis__col">
+            <h3 className="agile-analysis__h agile-analysis__h--bad">
+              Focus areas to improve
+            </h3>
+            {weaknesses.length ? (
+              <ul className="agile-analysis__list">
+                {weaknesses.map((t) => (
+                  <li key={t.topic}>
+                    <strong>{TOPICS[t.topic]}</strong> — {t.pct}% ({t.correct}/
+                    {t.total})
+                    <p className="agile-analysis__tip">{TOPIC_TIPS[t.topic]}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="agile-analysis__empty">
+                Nothing below 70% — excellent coverage across the syllabus!
+              </p>
+            )}
+          </div>
+        </div>
+
+        <p className="agile-analysis__verdict">
+          {accuracy === 100
+            ? 'Flawless session — full marks across every question you attempted. 🎯'
+            : weaknesses.length === 0
+              ? 'Strong, well-rounded session. To reach full marks, re-check the questions you missed below and confirm exact wording (definitions, timeboxes and the MoSCoW 60/20 numbers).'
+              : 'To push toward full marks, prioritise the focus areas above (weakest first). Re-read each missed question below — most marks are lost on exact definitions, role accountabilities, timeboxes and number-based rules.'}
+        </p>
+      </section>
+
+      {wrong.length > 0 && (
+        <>
+          <h2 className="agile-analysis__title">
+            Review your {wrong.length} missed question
+            {wrong.length > 1 ? 's' : ''}
+          </h2>
+          <ol className="agile-review__list">
+            {wrong.map((h, i) => (
+              <li key={`${h.id}-${i}`} className="agile-review__item is-wrong">
+                <span className="agile-review__topic">{TOPICS[h.topic]}</span>
+                <p className="agile-review__q">{h.q}</p>
+                <ul className="agile-review__opts">
+                  {h.options.map((opt) => {
+                    const picked = h.chosen === opt
+                    const isAnswer = h.correct === opt
+                    return (
+                      <li
+                        key={opt}
+                        className={[
+                          'agile-review__opt',
+                          isAnswer ? 'is-answer' : '',
+                          picked && !isAnswer ? 'is-yourwrong' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                      >
+                        {opt}
+                      </li>
+                    )
+                  })}
+                </ul>
+              </li>
+            ))}
+          </ol>
+        </>
       )}
     </div>
   )
