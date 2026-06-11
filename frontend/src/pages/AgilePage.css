@@ -1070,6 +1070,35 @@
   padding: 5px 12px;
 }
 
+/* Typed Manifesto warm-up at the start of each Zen session. */
+.agile-zen__warmform {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.agile-zen__input {
+  flex: 1;
+  min-width: 220px;
+  background: var(--ag-card-2);
+  border: 1px solid var(--ag-border);
+  color: var(--ag-text);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.98rem;
+  transition: border-color 0.15s ease;
+}
+.agile-zen__input:focus {
+  outline: none;
+  border-color: var(--ag-accent);
+}
+.agile-zen__input::placeholder {
+  color: var(--ag-muted);
+}
+.agile-zen__input:disabled {
+  opacity: 0.6;
+}
+
 /* Reveal states for the answer options after the user picks. */
 .agile-option:disabled {
   cursor: default;
