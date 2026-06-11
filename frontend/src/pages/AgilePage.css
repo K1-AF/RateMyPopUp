@@ -1042,6 +1042,33 @@
   top: 8px;
   z-index: 2;
 }
+/* Group the redo + end-session buttons on the right of the stat bar. */
+.agile-zen__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+.agile-statbar .agile-zen__actions .agile-btn {
+  margin-left: 0;
+}
+.agile-btn--warn {
+  background: rgba(255, 176, 32, 0.16);
+  border-color: rgba(255, 176, 32, 0.55);
+  color: var(--ag-warn);
+}
+.agile-btn--warn:hover:not(:disabled) {
+  border-color: var(--ag-warn);
+}
+.agile-zen__redo-tag {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ag-warn);
+  background: rgba(255, 176, 32, 0.12);
+  border: 1px solid rgba(255, 176, 32, 0.4);
+  border-radius: 999px;
+  padding: 5px 12px;
+}
 
 /* Reveal states for the answer options after the user picks. */
 .agile-option:disabled {
