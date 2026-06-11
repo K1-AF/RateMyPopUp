@@ -97,6 +97,39 @@ function buildZenPool() {
 const ZEN_POOL = buildZenPool()
 const ZEN_POOL_SIZE = ZEN_POOL.length
 
+// The four Agile Manifesto value statements, used for the typed warm-up at the
+// start of every Zen session. One side of each statement is blanked out and
+// the user must type the missing words.
+const MANIFESTO_PAIRS = [
+  { left: 'individuals and interactions', right: 'processes and tools' },
+  { left: 'working software', right: 'comprehensive documentation' },
+  { left: 'customer collaboration', right: 'contract negotiation' },
+  { left: 'responding to change', right: 'following a plan' },
+]
+
+// Build the 4 warm-up questions: random order, random side blanked each time.
+function buildWarmups() {
+  return shuffle(MANIFESTO_PAIRS).map((pair, i) => {
+    const blankLeft = Math.random() < 0.5
+    return {
+      id: `warmup-${i}`,
+      prompt: blankLeft ? `[?] OVER ${pair.right}` : `${pair.left} OVER [?]`,
+      answer: blankLeft ? pair.left : pair.right,
+      full: `${pair.left} OVER ${pair.right}`,
+    }
+  })
+}
+
+// Forgiving comparison for typed answers: case, punctuation and extra
+// whitespace are ignored so "Working Software!" still counts as correct.
+function normaliseTyped(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 // Safe localStorage helpers (wrapped so private-mode/quota errors never crash).
 function readStore(key, fallback) {
   try {
@@ -907,6 +940,12 @@ function ZenView() {
     () => new Set(readStore(STORAGE_KEYS.zenWrong, [])),
   )
   const [redoMode, setRedoMode] = useState(false)
+  // Typed Manifesto warm-up shown at the very start of every session.
+  const [warmups, setWarmups] = useState(() => buildWarmups())
+  const [warmIdx, setWarmIdx] = useState(0)
+  const [typed, setTyped] = useState('')
+  const [warmRevealed, setWarmRevealed] = useState(false)
+  const inWarmup = warmIdx < warmups.length
 
   const { recordExam } = useAgileProgress()
 
@@ -981,6 +1020,35 @@ function ZenView() {
     setIdx(0)
   }
 
+  // Check the typed warm-up answer and log it like any other question (topic
+  // KC, so it feeds the per-topic breakdown). Warm-ups never join the redo
+  // pool because they are not multiple-choice pool questions.
+  const submitWarmup = (e) => {
+    e.preventDefault()
+    if (warmRevealed || !typed.trim()) return
+    const w = warmups[warmIdx]
+    const isRight = normaliseTyped(typed) === normaliseTyped(w.answer)
+    setWarmRevealed(true)
+    setHistory((h) => [
+      ...h,
+      {
+        id: w.id,
+        topic: 'KC',
+        q: `Agile Manifesto: ${w.prompt}`,
+        options: isRight ? [w.answer] : [typed.trim(), w.answer],
+        correct: w.answer,
+        chosen: typed.trim(),
+        isRight,
+      },
+    ])
+  }
+
+  const nextWarmup = () => {
+    setTyped('')
+    setWarmRevealed(false)
+    setWarmIdx((i) => i + 1)
+  }
+
   // Switch the stream to only the retained wrong questions.
   const startRedo = () => {
     const wrongQuestions = ZEN_POOL.filter((q) => wrongIds.has(q.id))
@@ -1023,11 +1091,22 @@ function ZenView() {
     setHistory([])
     setEnded(false)
     setRedoMode(false)
+    // A fresh session always starts with a fresh Manifesto warm-up.
+    setWarmups(buildWarmups())
+    setWarmIdx(0)
+    setTyped('')
+    setWarmRevealed(false)
   }
 
   if (ended) {
     return <ZenReview history={history} onRestart={restart} />
   }
+
+  const warm = inWarmup ? warmups[warmIdx] : null
+  const warmIsRight =
+    warmRevealed && warm
+      ? normaliseTyped(typed) === normaliseTyped(warm.answer)
+      : false
 
   return (
     <div className="agile-zen">
@@ -1083,6 +1162,76 @@ function ZenView() {
         </div>
       </div>
 
+      {inWarmup && (
+        <div className="agile-question agile-zen__warmup">
+          <span className="agile-question__topic">
+            Warm-up · Agile Manifesto value {warmIdx + 1}/{warmups.length}
+          </span>
+          <h2 className="agile-question__text">{warm.prompt}</h2>
+          <form className="agile-zen__warmform" onSubmit={submitWarmup}>
+            <input
+              type="text"
+              className="agile-zen__input"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              placeholder="Type the missing words…"
+              disabled={warmRevealed}
+              autoFocus
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            {!warmRevealed && (
+              <button
+                type="submit"
+                className="agile-btn agile-btn--primary"
+                disabled={!typed.trim()}
+              >
+                Check
+              </button>
+            )}
+          </form>
+
+          {warmRevealed && (
+            <div
+              className={`agile-zen__feedback ${
+                warmIsRight ? 'is-right' : 'is-wrong'
+              }`}
+            >
+              <strong>{warmIsRight ? 'Correct ✓' : 'Not quite ✗'}</strong>
+              {!warmIsRight && (
+                <p className="agile-zen__answer">
+                  Answer: <span>{warm.answer}</span>
+                </p>
+              )}
+              <p className="agile-zen__explain">{warm.full}</p>
+            </div>
+          )}
+
+          <div className="agile-zen__nav">
+            {!warmRevealed ? (
+              <p className="agile-zen__hint">
+                Fill in the blank from the Agile Manifesto, then press{' '}
+                <strong>Check</strong>. All four values come first in every
+                session.
+              </p>
+            ) : (
+              <button
+                type="button"
+                className="agile-btn agile-btn--primary"
+                onClick={nextWarmup}
+              >
+                {warmIdx + 1 < warmups.length
+                  ? 'Next value ›'
+                  : 'Start questions ›'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!inWarmup && (
+      <>
       <div className="agile-question">
         <span className="agile-question__topic">{TOPICS[current.topic]}</span>
         <h2 className="agile-question__text">{current.q}</h2>
@@ -1149,6 +1298,8 @@ function ZenView() {
           </button>
         )}
       </div>
+      </>
+      )}
     </div>
   )
 }
