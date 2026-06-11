@@ -40,6 +40,9 @@ import './AgilePage.css'
 const STORAGE_KEYS = {
   matching: 'agilepm:matching-stats:v1',
   exams: 'agilepm:exam-results:v1',
+  // IDs of Zen questions answered incorrectly, retained across sessions so
+  // they can be redone until answered correctly.
+  zenWrong: 'agilepm:zen-wrong:v1',
 }
 
 // Fisher-Yates shuffle returning a new array (does not mutate the input).
@@ -898,8 +901,19 @@ function ZenView() {
   const [revealed, setRevealed] = useState(false)
   const [history, setHistory] = useState([]) // { id, topic, q, options, correct, chosen, isRight }
   const [ended, setEnded] = useState(false)
+  // Every question ever answered wrong is retained (and persisted) here until
+  // it is answered correctly. "Redo wrong" replays exactly this set.
+  const [wrongIds, setWrongIds] = useState(
+    () => new Set(readStore(STORAGE_KEYS.zenWrong, [])),
+  )
+  const [redoMode, setRedoMode] = useState(false)
 
   const { recordExam } = useAgileProgress()
+
+  // Keep the retained wrong-question set across page reloads too.
+  useEffect(() => {
+    writeStore(STORAGE_KEYS.zenWrong, [...wrongIds])
+  }, [wrongIds])
 
   const current = queue[idx]
   // Shuffle each question's options once (stable until the question changes).
@@ -930,20 +944,61 @@ function ZenView() {
         isRight,
       },
     ])
+    // Wrong answers join the retained redo pool; a correct answer (in any
+    // mode) clears that question from it.
+    setWrongIds((prev) => {
+      const has = prev.has(current.id)
+      if (isRight ? !has : has) return prev
+      const nextSet = new Set(prev)
+      if (isRight) nextSet.delete(current.id)
+      else nextSet.add(current.id)
+      return nextSet
+    })
   }
 
   const next = () => {
     setSelected(null)
     setRevealed(false)
-    setIdx((i) => {
-      const n = i + 1
-      if (n >= queue.length) {
-        // Exhausted the pool — reshuffle for an endless stream.
+    const n = idx + 1
+    if (n < queue.length) {
+      setIdx(n)
+      return
+    }
+    // End of the current queue: in redo mode replay whatever is still wrong,
+    // dropping back to the endless pool once everything has been cleared.
+    if (redoMode) {
+      const remaining = ZEN_POOL.filter((q) => wrongIds.has(q.id))
+      if (remaining.length > 0) {
+        setQueue(shuffle(remaining))
+      } else {
+        setRedoMode(false)
         setQueue(shuffle(ZEN_POOL))
-        return 0
       }
-      return n
-    })
+    } else {
+      // Exhausted the pool — reshuffle for an endless stream.
+      setQueue(shuffle(ZEN_POOL))
+    }
+    setIdx(0)
+  }
+
+  // Switch the stream to only the retained wrong questions.
+  const startRedo = () => {
+    const wrongQuestions = ZEN_POOL.filter((q) => wrongIds.has(q.id))
+    if (wrongQuestions.length === 0) return
+    setQueue(shuffle(wrongQuestions))
+    setIdx(0)
+    setSelected(null)
+    setRevealed(false)
+    setRedoMode(true)
+  }
+
+  // Leave redo mode and return to the full endless pool.
+  const exitRedo = () => {
+    setQueue(shuffle(ZEN_POOL))
+    setIdx(0)
+    setSelected(null)
+    setRevealed(false)
+    setRedoMode(false)
   }
 
   const endSession = () => {
@@ -967,6 +1022,7 @@ function ZenView() {
     setRevealed(false)
     setHistory([])
     setEnded(false)
+    setRedoMode(false)
   }
 
   if (ended) {
@@ -992,13 +1048,39 @@ function ZenView() {
           <span className="agile-statbar__num">{answered}</span>
           <span className="agile-statbar__label">Answered</span>
         </div>
-        <button
-          type="button"
-          className="agile-btn agile-btn--success"
-          onClick={endSession}
-        >
-          End session
-        </button>
+        {redoMode && (
+          <span className="agile-zen__redo-tag">
+            Redoing wrong questions · {wrongIds.size} left
+          </span>
+        )}
+        <div className="agile-zen__actions">
+          {redoMode ? (
+            <button
+              type="button"
+              className="agile-btn agile-btn--warn"
+              onClick={exitRedo}
+            >
+              Exit redo
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="agile-btn agile-btn--warn"
+              disabled={wrongIds.size === 0}
+              onClick={startRedo}
+              title="Replay every question you've answered incorrectly until you get it right"
+            >
+              Redo wrong ({wrongIds.size})
+            </button>
+          )}
+          <button
+            type="button"
+            className="agile-btn agile-btn--success"
+            onClick={endSession}
+          >
+            End session
+          </button>
+        </div>
       </div>
 
       <div className="agile-question">
@@ -1053,9 +1135,9 @@ function ZenView() {
       <div className="agile-zen__nav">
         {!revealed ? (
           <p className="agile-zen__hint">
-            Pick an answer to see instant feedback. Keep going as long as you
-            like, then press <strong>End session</strong> for your per-topic
-            breakdown.
+            Pick an answer to see instant feedback. Wrong answers are saved —
+            press <strong>Redo wrong</strong> to replay them until you get them
+            right, or <strong>End session</strong> for your per-topic breakdown.
           </p>
         ) : (
           <button
