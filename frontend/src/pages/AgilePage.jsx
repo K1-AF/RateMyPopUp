@@ -97,27 +97,101 @@ function buildZenPool() {
 const ZEN_POOL = buildZenPool()
 const ZEN_POOL_SIZE = ZEN_POOL.length
 
-// The four Agile Manifesto value statements, used for the typed warm-up at the
+// The four Agile Manifesto value statements, used for typed warm-ups at the
 // start of every Zen session. One side of each statement is blanked out and
 // the user must type the missing words.
-const MANIFESTO_PAIRS = [
+const MANIFESTO_VALUE_PAIRS = [
   { left: 'individuals and interactions', right: 'processes and tools' },
   { left: 'working software', right: 'comprehensive documentation' },
   { left: 'customer collaboration', right: 'contract negotiation' },
   { left: 'responding to change', right: 'following a plan' },
 ]
 
-// Build the 4 warm-up questions: random order, random side blanked each time.
+// KC 02.04 — Manifesto Principles Enhanced (12 principles).
+const MANIFESTO_PRINCIPLES = [
+  'Highest priority: satisfy customer through early/continuous delivery of value',
+  'Welcome change, even late',
+  'Deliver working solutions frequently',
+  'All parties work together daily',
+  'Build projects around motivated individuals',
+  'Face-to-face = most efficient communication',
+  'Working solutions = primary measure of progress',
+  'Sustainable pace indefinitely',
+  'Continuous attention to technical excellence',
+  'Simplicity - maximising work NOT done',
+  'Best outcomes emerge from self-organising teams',
+  'Regular reflection and adjustment',
+]
+
+// IN 01.01 — 9 Principles of Agile Leadership.
+// Rule requested by user: always keep the first word visible and only blank one
+// other word in each leadership principle prompt.
+const AGILE_LEADERSHIP_PRINCIPLES = [
+  'Leadership lives everywhere in the organisation',
+  'Leaders embrace and enable team and individual mastery',
+  'Leaders favour ecosystems over hierarchies',
+  'Leaders develop new leaders (not followers)',
+  'Leaders foster team accountability',
+  'Leaders ensure clarity of purpose',
+  'Leaders are stewards of organisational values',
+  'Leaders enable agility to maximise value and impact',
+  'Leaders are dedicated to learning and growth',
+]
+
+function pickLeadershipBlank(line) {
+  const words = line.split(/\s+/).filter(Boolean)
+  if (words.length < 3) return { prompt: `${line} [?]`, answer: '' }
+
+  // Keep first word visible; blank exactly one later word.
+  const i = 1 + Math.floor(Math.random() * (words.length - 1))
+  const answer = words[i].replace(/[()]/g, '')
+  const promptWords = [...words]
+  promptWords[i] = '[?]'
+  return {
+    prompt: promptWords.join(' '),
+    answer,
+    full: line,
+  }
+}
+
+// Build typed warm-up questions for every session:
+// - 4 Manifesto values (random side blanked)
+// - 12 manifesto principles (one phrase blanked with [?])
+// - 9 agile leadership principles (first word always visible + one blanked word)
 function buildWarmups() {
-  return shuffle(MANIFESTO_PAIRS).map((pair, i) => {
+  const valueQs = MANIFESTO_VALUE_PAIRS.map((pair, i) => {
     const blankLeft = Math.random() < 0.5
     return {
-      id: `warmup-${i}`,
+      id: `warmup-value-${i}`,
       prompt: blankLeft ? `[?] OVER ${pair.right}` : `${pair.left} OVER [?]`,
       answer: blankLeft ? pair.left : pair.right,
       full: `${pair.left} OVER ${pair.right}`,
     }
   })
+
+  const principleQs = MANIFESTO_PRINCIPLES.map((line, i) => {
+    const parts = line.split(/\s+/).filter(Boolean)
+    const mid = Math.max(1, Math.floor(parts.length / 2))
+    const answer = parts.slice(mid).join(' ')
+    return {
+      id: `warmup-principle-${i}`,
+      prompt: `${parts.slice(0, mid).join(' ')} [?]`,
+      answer,
+      full: line,
+    }
+  })
+
+  const leadershipQs = AGILE_LEADERSHIP_PRINCIPLES.map((line, i) => {
+    const built = pickLeadershipBlank(line)
+    return {
+      id: `warmup-leadership-${i}`,
+      prompt: built.prompt,
+      answer: built.answer,
+      full: built.full,
+    }
+  })
+
+  return shuffle([...valueQs, ...principleQs, ...leadershipQs])
 }
 
 // Forgiving comparison for typed answers: case, punctuation and extra
@@ -1034,7 +1108,7 @@ function ZenView() {
       {
         id: w.id,
         topic: 'KC',
-        q: `Agile Manifesto: ${w.prompt}`,
+        q: `Warm-up: ${w.prompt}`,
         options: isRight ? [w.answer] : [typed.trim(), w.answer],
         correct: w.answer,
         chosen: typed.trim(),
@@ -1165,7 +1239,7 @@ function ZenView() {
       {inWarmup && (
         <div className="agile-question agile-zen__warmup">
           <span className="agile-question__topic">
-            Warm-up · Agile Manifesto value {warmIdx + 1}/{warmups.length}
+            Warm-up · Written question {warmIdx + 1}/{warmups.length}
           </span>
           <h2 className="agile-question__text">{warm.prompt}</h2>
           <form className="agile-zen__warmform" onSubmit={submitWarmup}>
@@ -1211,9 +1285,8 @@ function ZenView() {
           <div className="agile-zen__nav">
             {!warmRevealed ? (
               <p className="agile-zen__hint">
-                Fill in the blank from the Agile Manifesto, then press{' '}
-                <strong>Check</strong>. All four values come first in every
-                session.
+                Fill in the blank, then press <strong>Check</strong>. Every Zen
+                session starts with this full written warm-up set.
               </p>
             ) : (
               <button
