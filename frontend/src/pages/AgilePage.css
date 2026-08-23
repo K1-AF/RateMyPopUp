@@ -1019,12 +1019,37 @@
   opacity: 0.65;
   white-space: nowrap;
 }
+/* Saved-results rows carry Review/Delete actions in a fifth column. */
+.agile-history__row--saved {
+  grid-template-columns: 1fr auto auto auto auto;
+}
+.agile-history__actions {
+  display: flex;
+  gap: 8px;
+}
+.agile-history__actions .agile-btn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+.agile-saved-review__meta {
+  margin: 0 0 14px;
+  color: var(--ag-muted);
+  font-size: 0.9rem;
+}
+.agile-saved-review__meta strong {
+  color: var(--ag-text);
+}
+
 @media (max-width: 640px) {
-  .agile-history__row {
+  .agile-history__row,
+  .agile-history__row--saved {
     grid-template-columns: 1fr auto;
     row-gap: 4px;
   }
   .agile-history__date {
+    grid-column: 1 / -1;
+  }
+  .agile-history__actions {
     grid-column: 1 / -1;
   }
 }

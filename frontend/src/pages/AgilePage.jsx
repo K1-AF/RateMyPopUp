@@ -43,7 +43,14 @@ const STORAGE_KEYS = {
   // IDs of Zen questions answered incorrectly, retained across sessions so
   // they can be redone until answered correctly.
   zenWrong: 'agilepm:zen-wrong:v1',
+  // Full snapshots of completed mock papers (questions, answers, result) so
+  // any attempt can be re-opened later to review where marks were lost.
+  savedMocks: 'agilepm:saved-mocks:v1',
 }
+
+// How many completed-mock snapshots to keep (newest first). Each snapshot is
+// a full 50-question paper, so the cap keeps localStorage well within quota.
+const MAX_SAVED_MOCKS = 24
 
 // Fisher-Yates shuffle returning a new array (does not mutate the input).
 function shuffle(input) {
@@ -1652,11 +1659,56 @@ function buildFixedExam(paper) {
 function ExamsView() {
   // active = { key, title, build } describing the paper to run.
   const [active, setActive] = useState(null)
+  // Completed-paper snapshots saved on this device, newest first.
+  const [savedMocks, setSavedMocks] = useState(() =>
+    readStore(STORAGE_KEYS.savedMocks, []),
+  )
+  // A saved attempt currently being re-reviewed, or null.
+  const [reviewing, setReviewing] = useState(null)
   const { examResults: results, recordExam, cloud, attempts } =
     useAgileProgress()
 
-  const onFinish = (examKey, title, result) => {
+  // Persist saved attempts whenever they change.
+  useEffect(() => {
+    writeStore(STORAGE_KEYS.savedMocks, savedMocks)
+  }, [savedMocks])
+
+  const onFinish = (examKey, title, result, exam, answers) => {
     recordExam(examKey, title, result)
+    // Snapshot the whole sat paper (question + option order + answers) so the
+    // review can be reopened later exactly as it appeared.
+    const entry = {
+      id: `${examKey}-${Date.now()}`,
+      examKey,
+      title,
+      savedAt: new Date().toISOString(),
+      result,
+      exam,
+      answers,
+    }
+    setSavedMocks((prev) => [entry, ...prev].slice(0, MAX_SAVED_MOCKS))
+  }
+
+  const deleteSaved = (id) => {
+    setSavedMocks((prev) => prev.filter((s) => s.id !== id))
+  }
+
+  // Re-open a previously saved attempt in the full review screen.
+  if (reviewing) {
+    return (
+      <div className="agile-saved-review">
+        <p className="agile-saved-review__meta">
+          Reviewing saved attempt: <strong>{reviewing.title}</strong> ·{' '}
+          {new Date(reviewing.savedAt).toLocaleString()}
+        </p>
+        <ExamReview
+          exam={reviewing.exam}
+          answers={reviewing.answers}
+          result={reviewing.result}
+          onExit={() => setReviewing(null)}
+        />
+      </div>
+    )
   }
 
   if (active) {
@@ -1822,6 +1874,62 @@ function ExamsView() {
         )}
       </div>
 
+      <h2 className="agile-exams__section">Saved results — review your answers</h2>
+      <p className="agile-exams__note">
+        Every mock you complete is saved here automatically. Open any attempt to
+        see the full paper again — every question, the answer you gave and the
+        correct one — so you can see exactly where you went wrong.
+      </p>
+      {savedMocks.length ? (
+        <ol className="agile-history">
+          {savedMocks.map((s) => (
+            <li
+              key={s.id}
+              className={`agile-history__row agile-history__row--saved ${
+                s.result.passed ? 'is-pass' : 'is-fail'
+              }`}
+            >
+              <span className="agile-history__title">{s.title}</span>
+              <span className="agile-history__score">
+                {s.result.score}/{s.result.total} · {s.result.percent}%
+              </span>
+              <span
+                className={`agile-pill ${
+                  s.result.passed ? 'agile-pill--pass' : 'agile-pill--fail'
+                }`}
+              >
+                {s.result.passed ? 'PASS' : 'NOT YET'}
+              </span>
+              <span className="agile-history__date">
+                {new Date(s.savedAt).toLocaleString()}
+              </span>
+              <span className="agile-history__actions">
+                <button
+                  type="button"
+                  className="agile-btn agile-btn--primary"
+                  onClick={() => setReviewing(s)}
+                >
+                  Review
+                </button>
+                <button
+                  type="button"
+                  className="agile-btn agile-btn--ghost"
+                  onClick={() => deleteSaved(s.id)}
+                  aria-label={`Delete saved attempt ${s.title}`}
+                >
+                  Delete
+                </button>
+              </span>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="agile-exam-card__none">
+          No saved results yet — finish any mock and it will appear here for
+          review.
+        </p>
+      )}
+
       {cloud && (
         <>
           <h2 className="agile-exams__section">Recent attempts</h2>
@@ -1904,8 +2012,10 @@ function ExamRunner({ examKey, title, build, onExit, onFinish }) {
     if (finishedRef.current) return
     finishedRef.current = true
     setSubmitted(true)
-    onFinish(examKey, title, result)
-  }, [examKey, title, onFinish, result])
+    // Pass the full paper snapshot and answers up so the attempt can be saved
+    // and reviewed again later, exactly as it was sat.
+    onFinish(examKey, title, result, exam, answers)
+  }, [examKey, title, onFinish, result, exam, answers])
 
   // Countdown timer; auto-submits when it reaches zero. The state changes
   // happen inside the timeout callback (not the effect body) to avoid
