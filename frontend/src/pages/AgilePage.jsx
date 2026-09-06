@@ -46,6 +46,9 @@ const STORAGE_KEYS = {
   // Full snapshots of completed mock papers (questions, answers, result) so
   // any attempt can be re-opened later to review where marks were lost.
   savedMocks: 'agilepm:saved-mocks:v1',
+  // The wrong-question bank: every mock question answered incorrectly, kept
+  // until it is answered correctly in a retry (or removed manually).
+  wrongBank: 'agilepm:wrong-bank:v1',
 }
 
 // How many completed-mock snapshots to keep (newest first). Each snapshot is
@@ -257,6 +260,11 @@ function AgileProgressProvider({ children }) {
   const [examResults, setExamResults] = useState(() =>
     readStore(STORAGE_KEYS.exams, {}),
   )
+  // Wrong-question bank entries:
+  // { id, topic, q, options, correct, explain, chosen, from, addedAt }
+  const [wrongBank, setWrongBank] = useState(() =>
+    readStore(STORAGE_KEYS.wrongBank, []),
+  )
   const [attempts, setAttempts] = useState([])
   const [loaded, setLoaded] = useState(false)
   const [cloudError, setCloudError] = useState(false)
@@ -283,6 +291,11 @@ function AgileProgressProvider({ children }) {
         if (progress) {
           setMatchingStats(progress.matching_stats ?? DEFAULT_MATCHING)
           setExamResults(progress.exam_results ?? {})
+          // Cloud bank wins only when it has entries; otherwise keep whatever
+          // is already stored locally so nothing is lost pre-migration.
+          if (Array.isArray(progress.wrong_bank) && progress.wrong_bank.length) {
+            setWrongBank(progress.wrong_bank)
+          }
         }
         setAttempts(history ?? [])
         loadedAccountRef.current = accountId
@@ -305,13 +318,16 @@ function AgileProgressProvider({ children }) {
   useEffect(() => {
     writeStore(STORAGE_KEYS.exams, examResults)
   }, [examResults])
+  useEffect(() => {
+    writeStore(STORAGE_KEYS.wrongBank, wrongBank)
+  }, [wrongBank])
 
   // Mirror aggregate progress to the cloud whenever it changes (owner only),
   // but only after the initial load for this account has completed.
   useEffect(() => {
     if (!cloud || loadedAccountRef.current !== accountId) return undefined
     let cancelled = false
-    saveAgileProgress(accountId, { matchingStats, examResults })
+    saveAgileProgress(accountId, { matchingStats, examResults, wrongBank })
       .then((ok) => {
         if (!cancelled) setCloudError(!ok)
       })
@@ -321,7 +337,7 @@ function AgileProgressProvider({ children }) {
     return () => {
       cancelled = true
     }
-  }, [cloud, accountId, loaded, matchingStats, examResults])
+  }, [cloud, accountId, loaded, matchingStats, examResults, wrongBank])
 
   const syncStatus = cloudError ? 'error' : loaded ? 'synced' : 'loading'
 
@@ -368,6 +384,38 @@ function AgileProgressProvider({ children }) {
     setMatchingStats({ ...DEFAULT_MATCHING })
   }, [])
 
+  // Merge newly missed questions into the bank, de-duplicated by question
+  // text. Re-missing a question updates the recorded wrong choice but keeps
+  // the original added date.
+  const addWrongQuestions = useCallback((entries) => {
+    if (!entries?.length) return
+    setWrongBank((prev) => {
+      const byKey = new Map(prev.map((e) => [normaliseQuestion(e.q), e]))
+      for (const entry of entries) {
+        const key = normaliseQuestion(entry.q)
+        const existing = byKey.get(key)
+        byKey.set(
+          key,
+          existing
+            ? { ...existing, chosen: entry.chosen, from: entry.from }
+            : entry,
+        )
+      }
+      return [...byKey.values()]
+    })
+  }, [])
+
+  // Remove questions (by their text) — used when a retry answers them right.
+  const removeWrongQuestions = useCallback((questionTexts) => {
+    if (!questionTexts?.length) return
+    const keys = new Set(questionTexts.map(normaliseQuestion))
+    setWrongBank((prev) => prev.filter((e) => !keys.has(normaliseQuestion(e.q))))
+  }, [])
+
+  const clearWrongBank = useCallback(() => {
+    setWrongBank([])
+  }, [])
+
   const value = useMemo(
     () => ({
       cloud,
@@ -378,6 +426,10 @@ function AgileProgressProvider({ children }) {
       recordExam,
       resetMatchingStats,
       attempts,
+      wrongBank,
+      addWrongQuestions,
+      removeWrongQuestions,
+      clearWrongBank,
     }),
     [
       cloud,
@@ -387,6 +439,10 @@ function AgileProgressProvider({ children }) {
       recordExam,
       resetMatchingStats,
       attempts,
+      wrongBank,
+      addWrongQuestions,
+      removeWrongQuestions,
+      clearWrongBank,
     ],
   )
 
@@ -470,6 +526,12 @@ function AgilePageInner() {
             <TabButton active={mode === 'zen'} onClick={() => setMode('zen')}>
               Zen Mode
             </TabButton>
+            <TabButton
+              active={mode === 'wrongbank'}
+              onClick={() => setMode('wrongbank')}
+            >
+              Wrong Questions
+            </TabButton>
           </nav>
           <SyncBadge />
         </div>
@@ -481,6 +543,7 @@ function AgilePageInner() {
         {mode === 'matching' && <MatchingView />}
         {mode === 'exams' && <ExamsView />}
         {mode === 'zen' && <ZenView />}
+        {mode === 'wrongbank' && <WrongBankView />}
       </main>
 
       <footer className="agile-footer">
@@ -571,6 +634,21 @@ function HomeView({ onPick }) {
             Endless exam-style questions from a {ZEN_POOL_SIZE}-question pool.
             Instant feedback, a live right/wrong/accuracy tally, and a full
             per-topic breakdown when you end the session.
+          </p>
+        </button>
+        <button
+          type="button"
+          className="agile-card"
+          onClick={() => onPick('wrongbank')}
+        >
+          <span className="agile-card__emoji" aria-hidden>
+            📕
+          </span>
+          <h2>Wrong Questions Bank</h2>
+          <p>
+            Every mock question you get wrong is collected here automatically.
+            Review each one with the correct answer, and retry the whole bank
+            until it&rsquo;s empty.
           </p>
         </button>
       </div>
@@ -1656,6 +1734,150 @@ function buildFixedExam(paper) {
   })
 }
 
+// ---------------------------------------------------------------------------
+// Wrong Questions Bank — every mock question answered incorrectly lands here
+// automatically. Questions can be reviewed (with the correct answer) and
+// retried in bulk; answering one correctly in a retry removes it from the bank.
+// ---------------------------------------------------------------------------
+function WrongBankView() {
+  const {
+    wrongBank,
+    addWrongQuestions,
+    removeWrongQuestions,
+    clearWrongBank,
+  } = useAgileProgress()
+  const [retrying, setRetrying] = useState(false)
+
+  // Sort newest-added first for the list view.
+  const entries = useMemo(
+    () =>
+      [...wrongBank].sort(
+        (a, b) => new Date(b.addedAt ?? 0) - new Date(a.addedAt ?? 0),
+      ),
+    [wrongBank],
+  )
+
+  // When a retry paper is submitted: questions answered correctly leave the
+  // bank; ones missed again stay, with the latest wrong choice recorded.
+  const onRetryFinish = (examKey, title, result, exam, answers) => {
+    removeWrongQuestions(
+      exam.filter((q) => answers[q.id] === q.correct).map((q) => q.q),
+    )
+    addWrongQuestions(
+      exam
+        .filter((q) => answers[q.id] !== q.correct)
+        .map((q) => ({
+          ...q,
+          chosen: answers[q.id] ?? null,
+          from: 'Wrong bank retry',
+        })),
+    )
+  }
+
+  if (retrying) {
+    return (
+      <ExamRunner
+        examKey="wrong-bank-retry"
+        title="Wrong questions retry"
+        build={() => shuffle(wrongBank)}
+        onExit={() => setRetrying(false)}
+        onFinish={onRetryFinish}
+      />
+    )
+  }
+
+  return (
+    <div className="agile-wrongbank">
+      <h1 className="agile-exams__title">Wrong Questions Bank</h1>
+      <p className="agile-exams__lede">
+        Every mock question you answer incorrectly is saved here automatically.
+        Review each one with its correct answer, then retry them all — answer a
+        question correctly in a retry and it leaves the bank for good.
+      </p>
+
+      <div className="agile-wrongbank__bar">
+        <span className="agile-wrongbank__count">
+          {entries.length} question{entries.length === 1 ? '' : 's'} in the bank
+        </span>
+        <div className="agile-wrongbank__actions">
+          <button
+            type="button"
+            className="agile-btn agile-btn--primary"
+            disabled={entries.length === 0}
+            onClick={() => setRetrying(true)}
+          >
+            Retry all wrong questions
+          </button>
+          <button
+            type="button"
+            className="agile-btn agile-btn--ghost"
+            disabled={entries.length === 0}
+            onClick={clearWrongBank}
+          >
+            Clear bank
+          </button>
+        </div>
+      </div>
+
+      {entries.length === 0 ? (
+        <p className="agile-empty">
+          Nothing here yet — sit any mock exam and every question you get wrong
+          will appear in this bank automatically.
+        </p>
+      ) : (
+        <ol className="agile-review__list">
+          {entries.map((e) => (
+            <li key={e.id} className="agile-review__item is-wrong">
+              <div className="agile-wrongbank__itemhead">
+                <span className="agile-review__topic">{TOPICS[e.topic]}</span>
+                <span className="agile-wrongbank__meta">
+                  {e.from}
+                  {e.addedAt
+                    ? ` · ${new Date(e.addedAt).toLocaleDateString()}`
+                    : ''}
+                </span>
+                <button
+                  type="button"
+                  className="agile-btn agile-btn--ghost agile-wrongbank__remove"
+                  onClick={() => removeWrongQuestions([e.q])}
+                  aria-label="Remove this question from the bank"
+                >
+                  Remove
+                </button>
+              </div>
+              <p className="agile-review__q">{e.q}</p>
+              <ul className="agile-review__opts">
+                {e.options.map((opt) => {
+                  const picked = e.chosen === opt
+                  const isAnswer = e.correct === opt
+                  return (
+                    <li
+                      key={opt}
+                      className={[
+                        'agile-review__opt',
+                        isAnswer ? 'is-answer' : '',
+                        picked && !isAnswer ? 'is-yourwrong' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      {opt}
+                      {isAnswer ? ' ✓' : picked ? ' — your answer' : ''}
+                    </li>
+                  )
+                })}
+              </ul>
+              {e.explain ? (
+                <p className="agile-review__explain">{e.explain}</p>
+              ) : null}
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  )
+}
+
 function ExamsView() {
   // active = { key, title, build } describing the paper to run.
   const [active, setActive] = useState(null)
@@ -1665,7 +1887,7 @@ function ExamsView() {
   )
   // A saved attempt currently being re-reviewed, or null.
   const [reviewing, setReviewing] = useState(null)
-  const { examResults: results, recordExam, cloud, attempts } =
+  const { examResults: results, recordExam, cloud, attempts, addWrongQuestions } =
     useAgileProgress()
 
   // Persist saved attempts whenever they change.
@@ -1687,6 +1909,22 @@ function ExamsView() {
       answers,
     }
     setSavedMocks((prev) => [entry, ...prev].slice(0, MAX_SAVED_MOCKS))
+    // Every missed question automatically joins the wrong-question bank.
+    addWrongQuestions(
+      exam
+        .filter((q) => answers[q.id] !== q.correct)
+        .map((q) => ({
+          id: q.id,
+          topic: q.topic,
+          q: q.q,
+          options: q.options,
+          correct: q.correct,
+          explain: q.explain ?? '',
+          chosen: answers[q.id] ?? null,
+          from: title,
+          addedAt: new Date().toISOString(),
+        })),
+    )
   }
 
   const deleteSaved = (id) => {
