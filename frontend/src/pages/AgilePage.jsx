@@ -617,7 +617,7 @@ function HomeView({ onPick }) {
           </span>
           <h2>Mock Exams</h2>
           <p>
-            2 fixed exam-realistic papers plus 4 randomised practice papers: 50
+            Nine full exam-style papers plus two extra realistic papers: 50
             questions, 40 minutes, 60% to pass.
           </p>
         </button>
@@ -2017,12 +2017,11 @@ function ExamsView() {
         Full mock exams &mdash; real exam style
       </h2>
       <p className="agile-exams__note">
-        Four hard, full-length papers modelled exactly on a real AgilePM v3
-        paper: direct questions, &ldquo;identify the missing word(s)&rdquo;,
-        numbered-statement combinations (1, 2, 3 &hellip;) and two-statement
-        true/false items. Correct answers are scattered with no pattern. After
-        submitting you&rsquo;ll get a full strengths &amp; weaknesses breakdown
-        by topic.
+        Full-length papers modelled exactly on a real AgilePM v3 paper: direct
+        questions, &ldquo;identify the missing word(s)&rdquo;, numbered-statement
+        combinations (1, 2, 3 &hellip;) and two-statement true/false items.
+        Correct answers are scattered with no pattern. After submitting
+        you&rsquo;ll get a full strengths &amp; weaknesses breakdown by topic.
       </p>
       <div className="agile-exams__grid">
         {HARD_EXAMS.map((paper) =>
