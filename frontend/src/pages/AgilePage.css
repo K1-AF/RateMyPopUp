@@ -1095,6 +1095,45 @@
   padding: 5px 12px;
 }
 
+/* ---------------------------------------------------------------------------
+   Wrong Questions Bank
+   --------------------------------------------------------------------------- */
+.agile-wrongbank__bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: var(--ag-bg-2);
+  border: 1px solid var(--ag-border);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+}
+.agile-wrongbank__count {
+  font-weight: 700;
+}
+.agile-wrongbank__actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+.agile-wrongbank__itemhead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.agile-wrongbank__meta {
+  font-size: 0.78rem;
+  color: var(--ag-muted);
+}
+.agile-wrongbank__remove {
+  margin-left: auto;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+}
+
 /* Typed Manifesto warm-up at the start of each Zen session. */
 .agile-zen__warmform {
   display: flex;

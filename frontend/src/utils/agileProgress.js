@@ -25,23 +25,39 @@ export function isAgileCloudUser(user) {
 
 const DEFAULT_MATCHING = { correct: 0, wrong: 0, rounds: 0 }
 
+// True when a Postgres/PostgREST error means the wrong_bank column does not
+// exist yet (i.e. the migration hasn't been run). Used to fall back gracefully.
+function isMissingWrongBankColumn(error) {
+  const msg = `${error?.message ?? ''} ${error?.code ?? ''}`
+  return /wrong_bank|42703|PGRST204/.test(msg)
+}
+
 /**
  * Load the aggregate progress row for an account.
- * @returns {Promise<{matching_stats:object, exam_results:object}|null>}
+ * @returns {Promise<{matching_stats:object, exam_results:object, wrong_bank:Array}|null>}
  */
 export async function loadAgileProgress(accountId) {
   if (!accountId) return null
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('agile_progress')
-      .select('matching_stats, exam_results')
+      .select('matching_stats, exam_results, wrong_bank')
       .eq('account_id', accountId)
       .maybeSingle()
+    // Fall back to the legacy column list if the migration hasn't run yet.
+    if (error && isMissingWrongBankColumn(error)) {
+      ;({ data, error } = await supabase
+        .from('agile_progress')
+        .select('matching_stats, exam_results')
+        .eq('account_id', accountId)
+        .maybeSingle())
+    }
     if (error) throw error
     if (!data) return null
     return {
       matching_stats: data.matching_stats ?? { ...DEFAULT_MATCHING },
       exam_results: data.exam_results ?? {},
+      wrong_bank: data.wrong_bank ?? [],
     }
   } catch (err) {
     console.error('[agile] loadAgileProgress failed:', err.message)
@@ -52,17 +68,27 @@ export async function loadAgileProgress(accountId) {
 /**
  * Upsert the aggregate progress row. Returns true on success.
  */
-export async function saveAgileProgress(accountId, { matchingStats, examResults }) {
+export async function saveAgileProgress(
+  accountId,
+  { matchingStats, examResults, wrongBank },
+) {
   if (!accountId) return false
+  const base = {
+    account_id: accountId,
+    matching_stats: matchingStats ?? { ...DEFAULT_MATCHING },
+    exam_results: examResults ?? {},
+  }
   try {
-    const { error } = await supabase.from('agile_progress').upsert(
-      {
-        account_id: accountId,
-        matching_stats: matchingStats ?? { ...DEFAULT_MATCHING },
-        exam_results: examResults ?? {},
-      },
-      { onConflict: 'account_id' },
-    )
+    let { error } = await supabase
+      .from('agile_progress')
+      .upsert({ ...base, wrong_bank: wrongBank ?? [] }, { onConflict: 'account_id' })
+    // Fall back without the column if the migration hasn't run yet, so the
+    // rest of the progress still syncs.
+    if (error && isMissingWrongBankColumn(error)) {
+      ;({ error } = await supabase
+        .from('agile_progress')
+        .upsert(base, { onConflict: 'account_id' }))
+    }
     if (error) throw error
     return true
   } catch (err) {
