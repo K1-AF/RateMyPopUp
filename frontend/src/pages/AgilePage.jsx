@@ -2010,7 +2010,8 @@ function ExamsView() {
         {EXAM_CONFIG.questionCount} questions, a{' '}
         {EXAM_CONFIG.durationMinutes}-minute timer, and a pass mark of{' '}
         {EXAM_CONFIG.passMark}/{EXAM_CONFIG.questionCount} (
-        {EXAM_CONFIG.passPercent}%). Closed book.
+        {EXAM_CONFIG.passPercent}%). Closed book. Tap an option and
+        you&rsquo;ll see immediately whether you were right or wrong.
       </p>
 
       <h2 className="agile-exams__section">
@@ -2020,8 +2021,9 @@ function ExamsView() {
         Full-length papers modelled exactly on a real AgilePM v3 paper: direct
         questions, &ldquo;identify the missing word(s)&rdquo;, numbered-statement
         combinations (1, 2, 3 &hellip;) and two-statement true/false items.
-        Correct answers are scattered with no pattern. After submitting
-        you&rsquo;ll get a full strengths &amp; weaknesses breakdown by topic.
+        Correct answers are scattered with no pattern. Each tap shows
+        instantly if you were right or wrong; submit at the end for the
+        full strengths &amp; weaknesses breakdown by topic.
       </p>
       <div className="agile-exams__grid">
         {HARD_EXAMS.map((paper) =>
@@ -2230,6 +2232,14 @@ function ExamRunner({ examKey, title, build, onExit, onFinish }) {
   const [secondsLeft, setSecondsLeft] = useState(durationMinutes * 60)
   const finishedRef = useRef(false)
 
+  // First tap locks the answer and reveals right/wrong immediately, so
+  // practice feedback happens per question rather than only after submit.
+  const choose = (opt) => {
+    const qid = exam[current].id
+    if (answers[qid] != null) return
+    setAnswers((prev) => ({ ...prev, [qid]: opt }))
+  }
+
   const result = useMemo(() => {
     const score = exam.reduce(
       (acc, q) => acc + (answers[q.id] === q.correct ? 1 : 0),
@@ -2267,6 +2277,8 @@ function ExamRunner({ examKey, title, build, onExit, onFinish }) {
   }, [secondsLeft, submitted, handleSubmit])
 
   const answeredCount = Object.keys(answers).length
+  const rightCount = exam.filter((qq) => answers[qq.id] === qq.correct).length
+  const wrongCount = answeredCount - rightCount
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0')
   const ss = String(secondsLeft % 60).padStart(2, '0')
   const lowTime = secondsLeft <= 60
@@ -2294,7 +2306,10 @@ function ExamRunner({ examKey, title, build, onExit, onFinish }) {
           <span>
             {title} · Q{current + 1}/{exam.length}
           </span>
-          <span>Answered: {answeredCount}/{exam.length}</span>
+          <span>
+            {rightCount} right · {wrongCount} wrong · {answeredCount}/
+            {exam.length}
+          </span>
         </div>
         <div
           className={`agile-timer${lowTime ? ' agile-timer--low' : ''}`}
@@ -2317,15 +2332,25 @@ function ExamRunner({ examKey, title, build, onExit, onFinish }) {
         <h2 className="agile-question__text">{q.q}</h2>
         <div className="agile-options">
           {q.options.map((opt) => {
-            const selected = answers[q.id] === opt
+            const chosen = answers[q.id]
+            const revealed = chosen != null
+            const isChosen = chosen === opt
+            const isAnswer = q.correct === opt
+            const cls = [
+              'agile-option',
+              revealed && isAnswer ? 'is-correct' : '',
+              revealed && isChosen && !isAnswer ? 'is-wrong' : '',
+              !revealed && isChosen ? 'is-selected' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')
             return (
               <button
                 key={opt}
                 type="button"
-                className={`agile-option${selected ? ' is-selected' : ''}`}
-                onClick={() =>
-                  setAnswers((prev) => ({ ...prev, [q.id]: opt }))
-                }
+                className={cls}
+                onClick={() => choose(opt)}
+                disabled={revealed}
               >
                 <span className="agile-option__radio" aria-hidden />
                 <span>{opt}</span>
@@ -2333,6 +2358,24 @@ function ExamRunner({ examKey, title, build, onExit, onFinish }) {
             )
           })}
         </div>
+
+        {answers[q.id] != null && (
+          <div
+            className={`agile-zen__feedback ${
+              answers[q.id] === q.correct ? 'is-right' : 'is-wrong'
+            }`}
+          >
+            <strong>
+              {answers[q.id] === q.correct ? 'Correct ✓' : 'Not quite ✗'}
+            </strong>
+            {answers[q.id] !== q.correct && (
+              <p className="agile-zen__answer">
+                Answer: <span>{q.correct}</span>
+              </p>
+            )}
+            {q.explain && <p className="agile-zen__explain">{q.explain}</p>}
+          </div>
+        )}
       </div>
 
       <div className="agile-runner__nav">
@@ -2371,7 +2414,11 @@ function ExamRunner({ examKey, title, build, onExit, onFinish }) {
             className={[
               'agile-qjump__dot',
               i === current ? 'is-current' : '',
-              answers[qq.id] ? 'is-answered' : '',
+              answers[qq.id] == null
+                ? ''
+                : answers[qq.id] === qq.correct
+                  ? 'is-right'
+                  : 'is-wrong',
             ]
               .filter(Boolean)
               .join(' ')}
