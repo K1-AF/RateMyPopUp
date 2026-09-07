@@ -649,7 +649,7 @@
   cursor: pointer;
   transition: all 0.13s ease;
 }
-.agile-option:hover {
+.agile-option:hover:not(:disabled) {
   border-color: var(--ag-accent);
 }
 .agile-option__radio {
@@ -696,6 +696,16 @@
   color: var(--ag-text);
   border-color: var(--ag-accent);
   background: rgba(108, 140, 255, 0.16);
+}
+.agile-qjump__dot.is-right {
+  color: var(--ag-good);
+  border-color: var(--ag-good);
+  background: rgba(46, 204, 143, 0.16);
+}
+.agile-qjump__dot.is-wrong {
+  color: var(--ag-bad);
+  border-color: var(--ag-bad);
+  background: rgba(255, 93, 108, 0.16);
 }
 .agile-qjump__dot.is-current {
   outline: 2px solid var(--ag-accent-2);
