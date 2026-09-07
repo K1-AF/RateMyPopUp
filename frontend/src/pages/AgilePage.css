@@ -503,6 +503,10 @@
   line-height: 1.55;
   font-size: 0.9rem;
 }
+.agile-exams__back {
+  align-self: flex-start;
+  margin-bottom: 8px;
+}
 .agile-exams__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -563,8 +567,15 @@
   letter-spacing: 0.5px;
   color: var(--ag-accent);
 }
-.agile-exam-card .agile-btn {
+.agile-exam-card__actions {
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.agile-exam-card__actions .agile-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* Exam runner */

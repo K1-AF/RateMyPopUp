@@ -26,6 +26,7 @@ import {
   TOPICS,
 } from '../data/agileContent.js'
 import { HARD_EXAMS, TOPIC_TIPS } from '../data/agileHardExams.js'
+import { DOC_MOCK_EXAMS } from '../data/agileDocMockExams.js'
 import { ZEN_QUESTIONS } from '../data/agileZenQuestions.js'
 import './AgilePage.css'
 
@@ -47,13 +48,15 @@ const STORAGE_KEYS = {
   // any attempt can be re-opened later to review where marks were lost.
   savedMocks: 'agilepm:saved-mocks:v1',
   // The wrong-question bank: every mock question answered incorrectly, kept
-  // until it is answered correctly in a retry (or removed manually).
+  // until the user removes it manually. Getting one right later does not
+  // take it out of the bank.
   wrongBank: 'agilepm:wrong-bank:v1',
 }
 
 // How many completed-mock snapshots to keep (newest first). Each snapshot is
-// a full 50-question paper, so the cap keeps localStorage well within quota.
-const MAX_SAVED_MOCKS = 24
+// a full 50-question paper, so the cap keeps localStorage well within quota
+// while still holding several sittings of every paper.
+const MAX_SAVED_MOCKS = 80
 
 // Fisher-Yates shuffle returning a new array (does not mutate the input).
 function shuffle(input) {
@@ -84,6 +87,7 @@ function buildZenPool() {
     ...REALISTIC_EXAMS.flatMap((e) => e.questions),
     ...TOPIC_EXAMS.flatMap((e) => e.questions),
     ...HARD_EXAMS.flatMap((e) => e.questions),
+    ...DOC_MOCK_EXAMS.flatMap((e) => e.questions),
   ]
   const seen = new Set()
   const pool = []
@@ -405,7 +409,8 @@ function AgileProgressProvider({ children }) {
     })
   }, [])
 
-  // Remove questions (by their text) — used when a retry answers them right.
+  // Remove questions by their text — only used by the manual Remove / Clear
+  // controls. A later correct answer does not drop an item from the bank.
   const removeWrongQuestions = useCallback((questionTexts) => {
     if (!questionTexts?.length) return
     const keys = new Set(questionTexts.map(normaliseQuestion))
@@ -617,8 +622,8 @@ function HomeView({ onPick }) {
           </span>
           <h2>Mock Exams</h2>
           <p>
-            Nine full exam-style papers plus two extra realistic papers: 50
-            questions, 40 minutes, 60% to pass.
+            Nine full exam-style papers, a 10-paper practice pack, and two
+            extra realistic papers: 50 questions, 40 minutes, 60% to pass.
           </p>
         </button>
         <button
@@ -647,8 +652,8 @@ function HomeView({ onPick }) {
           <h2>Wrong Questions Bank</h2>
           <p>
             Every mock question you get wrong is collected here automatically.
-            Review each one with the correct answer, and retry the whole bank
-            until it&rsquo;s empty.
+            Review each one with the correct answer and retry the whole bank
+            whenever you want &mdash; getting one right does not remove it.
           </p>
         </button>
       </div>
@@ -1737,7 +1742,7 @@ function buildFixedExam(paper) {
 // ---------------------------------------------------------------------------
 // Wrong Questions Bank — every mock question answered incorrectly lands here
 // automatically. Questions can be reviewed (with the correct answer) and
-// retried in bulk; answering one correctly in a retry removes it from the bank.
+// retried in bulk. A later correct answer does not remove them.
 // ---------------------------------------------------------------------------
 function WrongBankView() {
   const {
@@ -1757,12 +1762,9 @@ function WrongBankView() {
     [wrongBank],
   )
 
-  // When a retry paper is submitted: questions answered correctly leave the
-  // bank; ones missed again stay, with the latest wrong choice recorded.
+  // Retrying is for practice only. Correct answers stay in the bank; if a
+  // question is missed again, refresh the recorded wrong choice.
   const onRetryFinish = (examKey, title, result, exam, answers) => {
-    removeWrongQuestions(
-      exam.filter((q) => answers[q.id] === q.correct).map((q) => q.q),
-    )
     addWrongQuestions(
       exam
         .filter((q) => answers[q.id] !== q.correct)
@@ -1791,8 +1793,9 @@ function WrongBankView() {
       <h1 className="agile-exams__title">Wrong Questions Bank</h1>
       <p className="agile-exams__lede">
         Every mock question you answer incorrectly is saved here automatically.
-        Review each one with its correct answer, then retry them all — answer a
-        question correctly in a retry and it leaves the bank for good.
+        Review each one with its correct answer and retry them whenever you
+        want. Getting a question right does not remove it &mdash; use Remove
+        or Clear bank if you want it gone.
       </p>
 
       <div className="agile-wrongbank__bar">
@@ -1887,6 +1890,9 @@ function ExamsView() {
   )
   // A saved attempt currently being re-reviewed, or null.
   const [reviewing, setReviewing] = useState(null)
+  // When set, the card Review button is showing every saved sitting of
+  // that one paper (newest first).
+  const [reviewingPaper, setReviewingPaper] = useState(null)
   const { examResults: results, recordExam, cloud, attempts, addWrongQuestions } =
     useAgileProgress()
 
@@ -1931,6 +1937,11 @@ function ExamsView() {
     setSavedMocks((prev) => prev.filter((s) => s.id !== id))
   }
 
+  const pastFor = (key) =>
+    savedMocks
+      .filter((s) => String(s.examKey) === String(key))
+      .sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt))
+
   // Re-open a previously saved attempt in the full review screen.
   if (reviewing) {
     return (
@@ -1943,8 +1954,83 @@ function ExamsView() {
           exam={reviewing.exam}
           answers={reviewing.answers}
           result={reviewing.result}
+          exitLabel={reviewingPaper ? 'Back to attempts' : 'Back to exams'}
           onExit={() => setReviewing(null)}
         />
+      </div>
+    )
+  }
+
+  // Per-paper history opened from the Review button on a mock card.
+  if (reviewingPaper) {
+    const past = pastFor(reviewingPaper.key)
+    return (
+      <div className="agile-exams">
+        <button
+          type="button"
+          className="agile-btn agile-btn--ghost agile-exams__back"
+          onClick={() => setReviewingPaper(null)}
+        >
+          ‹ Back to exams
+        </button>
+        <h1 className="agile-exams__title">
+          Past attempts — {reviewingPaper.title}
+        </h1>
+        <p className="agile-exams__lede">
+          Every completed sitting of this paper is kept here. Open any one to
+          see every question, the answer you gave, and the correct one.
+        </p>
+        {past.length ? (
+          <ol className="agile-history">
+            {past.map((s, i) => (
+              <li
+                key={s.id}
+                className={`agile-history__row agile-history__row--saved ${
+                  s.result.passed ? 'is-pass' : 'is-fail'
+                }`}
+              >
+                <span className="agile-history__title">
+                  {i === 0 ? 'Most recent' : `Sitting ${i + 1}`}
+                </span>
+                <span className="agile-history__score">
+                  {s.result.score}/{s.result.total} · {s.result.percent}%
+                </span>
+                <span
+                  className={`agile-pill ${
+                    s.result.passed ? 'agile-pill--pass' : 'agile-pill--fail'
+                  }`}
+                >
+                  {s.result.passed ? 'PASS' : 'NOT YET'}
+                </span>
+                <span className="agile-history__date">
+                  {new Date(s.savedAt).toLocaleString()}
+                </span>
+                <span className="agile-history__actions">
+                  <button
+                    type="button"
+                    className="agile-btn agile-btn--primary"
+                    onClick={() => setReviewing(s)}
+                  >
+                    Open
+                  </button>
+                  <button
+                    type="button"
+                    className="agile-btn agile-btn--ghost"
+                    onClick={() => deleteSaved(s.id)}
+                    aria-label={`Delete saved attempt from ${s.savedAt}`}
+                  >
+                    Delete
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="agile-exam-card__none">
+            No saved sittings of this paper yet. Finish it once and it will
+            appear here for review.
+          </p>
+        )}
       </div>
     )
   }
@@ -1963,6 +2049,7 @@ function ExamsView() {
 
   const renderCard = (key, title, build) => {
     const r = results[key]
+    const past = pastFor(key)
     return (
       <div key={key} className="agile-exam-card">
         <div className="agile-exam-card__head">
@@ -1991,13 +2078,30 @@ function ExamsView() {
         ) : (
           <p className="agile-exam-card__none">Not attempted yet.</p>
         )}
-        <button
-          type="button"
-          className="agile-btn agile-btn--primary"
-          onClick={() => setActive({ key, title, build })}
-        >
-          {r ? 'Retake' : 'Start'}
-        </button>
+        <div className="agile-exam-card__actions">
+          <button
+            type="button"
+            className="agile-btn agile-btn--primary"
+            onClick={() => setActive({ key, title, build })}
+          >
+            {r ? 'Retake' : 'Start'}
+          </button>
+          <button
+            type="button"
+            className="agile-btn"
+            disabled={past.length === 0}
+            onClick={() => setReviewingPaper({ key, title })}
+            title={
+              past.length === 0
+                ? 'Finish this mock to review it later'
+                : `Review ${past.length} saved attempt${
+                    past.length === 1 ? '' : 's'
+                  }`
+            }
+          >
+            Review{past.length > 0 ? ` (${past.length})` : ''}
+          </button>
+        </div>
       </div>
     )
   }
@@ -2031,6 +2135,20 @@ function ExamsView() {
         )}
       </div>
 
+      <h2 className="agile-exams__section">
+        Practice examination pack &mdash; 10 extra papers
+      </h2>
+      <p className="agile-exams__note">
+        Ten additional full-length papers from the practice examination pack
+        (500 questions). Each item keeps its A&ndash;D options and the pack
+        answer key, with the rationale shown after you tap.
+      </p>
+      <div className="agile-exams__grid">
+        {DOC_MOCK_EXAMS.map((paper) =>
+          renderCard(paper.id, paper.title, () => buildFixedExam(paper)),
+        )}
+      </div>
+
       <h2 className="agile-exams__section">Exam-realistic papers</h2>
       <p className="agile-exams__note">
         Two fixed, exam-standard papers written in the real APMG question style
@@ -2051,7 +2169,9 @@ function ExamsView() {
         pass).
       </p>
       <div className="agile-exams__grid">
-        {TOPIC_EXAMS.map((paper) => (
+        {TOPIC_EXAMS.map((paper) => {
+          const past = pastFor(paper.id)
+          return (
           <div key={paper.id} className="agile-exam-card">
             <div className="agile-exam-card__head">
               <h2>{paper.title}</h2>
@@ -2085,21 +2205,41 @@ function ExamsView() {
             ) : (
               <p className="agile-exam-card__none">Not attempted yet.</p>
             )}
-            <button
-              type="button"
-              className="agile-btn agile-btn--primary"
-              onClick={() =>
-                setActive({
-                  key: paper.id,
-                  title: paper.title,
-                  build: () => buildFixedExam(paper),
-                })
-              }
-            >
-              {results[paper.id] ? 'Retake' : 'Start'}
-            </button>
+            <div className="agile-exam-card__actions">
+              <button
+                type="button"
+                className="agile-btn agile-btn--primary"
+                onClick={() =>
+                  setActive({
+                    key: paper.id,
+                    title: paper.title,
+                    build: () => buildFixedExam(paper),
+                  })
+                }
+              >
+                {results[paper.id] ? 'Retake' : 'Start'}
+              </button>
+              <button
+                type="button"
+                className="agile-btn"
+                disabled={past.length === 0}
+                onClick={() =>
+                  setReviewingPaper({ key: paper.id, title: paper.title })
+                }
+                title={
+                  past.length === 0
+                    ? 'Finish this mock to review it later'
+                    : `Review ${past.length} saved attempt${
+                        past.length === 1 ? '' : 's'
+                      }`
+                }
+              >
+                Review{past.length > 0 ? ` (${past.length})` : ''}
+              </button>
+            </div>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       <h2 className="agile-exams__section">Randomised practice papers</h2>
@@ -2443,7 +2583,7 @@ function ExamRunner({ examKey, title, build, onExit, onFinish }) {
   )
 }
 
-function ExamReview({ exam, answers, result, onExit }) {
+function ExamReview({ exam, answers, result, onExit, exitLabel = 'Back to exams' }) {
   const [filter, setFilter] = useState('all') // all | wrong
 
   const visible = exam.filter((q) =>
@@ -2489,7 +2629,7 @@ function ExamReview({ exam, answers, result, onExit }) {
         </div>
         <div className="agile-result__actions">
           <button type="button" className="agile-btn" onClick={onExit}>
-            Back to exams
+            {exitLabel}
           </button>
         </div>
       </div>
