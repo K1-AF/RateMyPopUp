@@ -20,6 +20,7 @@ import {
   EXAM_WEIGHTING,
   FLASHCARDS,
   MATCHING_PAIRS,
+  RACI_TABLE,
   QUESTION_BANK,
   REALISTIC_EXAMS,
   TOPIC_EXAMS,
@@ -40,6 +41,9 @@ import './AgilePage.css'
 // Namespaced storage keys so this study tool never clashes with app data.
 const STORAGE_KEYS = {
   matching: 'agilepm:matching-stats:v1',
+  // Separate stats for the Roles (RACI) matching game so they never mix
+  // with the term/definition matching scores.
+  roles: 'agilepm:roles-stats:v1',
   exams: 'agilepm:exam-results:v1',
   // IDs of Zen questions answered incorrectly, retained across sessions so
   // they can be redone until answered correctly.
@@ -525,7 +529,16 @@ function AgilePageInner() {
             >
               Matching Game
             </TabButton>
-            <TabButton active={mode === 'exams'} onClick={() => setMode('exams')}>
+            <TabButton
+              active={mode === 'roles'}
+              onClick={() => setMode('roles')}
+            >
+              Roles
+            </TabButton>
+            <TabButton
+              active={mode === 'exams'}
+              onClick={() => setMode('exams')}
+            >
               Mock Exams
             </TabButton>
             <TabButton active={mode === 'zen'} onClick={() => setMode('zen')}>
@@ -546,6 +559,7 @@ function AgilePageInner() {
         {mode === 'home' && <HomeView onPick={setMode} />}
         {mode === 'flashcards' && <FlashcardsView />}
         {mode === 'matching' && <MatchingView />}
+        {mode === 'roles' && <RolesView />}
         {mode === 'exams' && <ExamsView />}
         {mode === 'zen' && <ZenView />}
         {mode === 'wrongbank' && <WrongBankView />}
@@ -553,8 +567,8 @@ function AgilePageInner() {
 
       <footer className="agile-footer">
         Private study area · {FLASHCARDS.length} flashcards ·{' '}
-        {MATCHING_PAIRS.length} matching pairs · {ZEN_POOL_SIZE}-question Zen pool
-        · Good luck on the exam.
+        {MATCHING_PAIRS.length} matching pairs · {RACI_TABLE.length} RACI
+        artifacts · {ZEN_POOL_SIZE}-question Zen pool · Good luck on the exam.
       </footer>
     </div>
   )
@@ -610,6 +624,20 @@ function HomeView({ onPick }) {
           <p>
             Match terms to definitions. Everything is randomly shuffled each
             round, with running right/wrong progress tracking.
+          </p>
+        </button>
+        <button
+          type="button"
+          className="agile-card"
+          onClick={() => onPick('roles')}
+        >
+          <span className="agile-card__emoji" aria-hidden>
+            👥
+          </span>
+          <h2>Roles</h2>
+          <p>
+            Critical RACI to memorise. Match each project artifact to who is
+            Responsible and who is Accountable.
           </p>
         </button>
         <button
@@ -1076,6 +1104,283 @@ function MatchingView() {
                   onClick={() => handleDefClick(d.id)}
                 >
                   {d.text}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Roles matching game — Critical RACI table (artifact → Responsible / Accountable)
+// ---------------------------------------------------------------------------
+const ROLE_ROUND_SIZE = 6
+const ROLE_MODES = {
+  both: 'Both R and A',
+  responsible: 'Responsible',
+  accountable: 'Accountable',
+}
+
+// Builds the match pairs for one drill mode. "both" uses the combined
+// Responsible + Accountable line so one tap reviews the whole table row.
+function rolesPairsForMode(mode) {
+  return RACI_TABLE.map((row) => {
+    if (mode === 'responsible') {
+      return { id: `${row.id}-r`, term: row.artifact, definition: row.responsible }
+    }
+    if (mode === 'accountable') {
+      return { id: `${row.id}-a`, term: row.artifact, definition: row.accountable }
+    }
+    return {
+      id: row.id,
+      term: row.artifact,
+      definition: `Responsible: ${row.responsible}\nAccountable: ${row.accountable}`,
+      responsible: row.responsible,
+      accountable: row.accountable,
+    }
+  })
+}
+
+// Same round builder as the term matching game, but never puts two cards
+// with the same definition text in one round (several artifacts share a
+// RACI pair, which would make the right-hand column ambiguous).
+function createRolesRound(mode, excludeIds = []) {
+  const pool = rolesPairsForMode(mode)
+  const size = Math.min(ROLE_ROUND_SIZE, pool.length)
+  const exclude = new Set(excludeIds)
+  const ordered = [
+    ...shuffle(pool.filter((p) => !exclude.has(p.id))),
+    ...shuffle(pool.filter((p) => exclude.has(p.id))),
+  ]
+  const picked = []
+  const usedDefs = new Set()
+  for (const p of ordered) {
+    if (picked.length >= size) break
+    const key = p.definition.toLowerCase()
+    if (usedDefs.has(key)) continue
+    usedDefs.add(key)
+    picked.push(p)
+  }
+  return {
+    pairs: picked,
+    terms: shuffle(picked.map((p) => ({ id: p.id, text: p.term }))),
+    defs: shuffle(
+      picked.map((p) => ({
+        id: p.id,
+        text: p.definition,
+        responsible: p.responsible,
+        accountable: p.accountable,
+      })),
+    ),
+  }
+}
+
+function RolesView() {
+  const [mode, setMode] = useState('both')
+  const [round, setRound] = useState(() => createRolesRound('both'))
+  const [selectedTerm, setSelectedTerm] = useState(null)
+  const [matched, setMatched] = useState(() => new Set())
+  const [wrongFlash, setWrongFlash] = useState(null)
+  const [roundWrong, setRoundWrong] = useState(0)
+  const seenRef = useRef(round.pairs.map((p) => p.id))
+  const [stats, setStats] = useState(() =>
+    readStore(STORAGE_KEYS.roles, DEFAULT_MATCHING),
+  )
+
+  useEffect(() => {
+    writeStore(STORAGE_KEYS.roles, stats)
+  }, [stats])
+
+  const startRound = useCallback((nextMode, resetHistory = false) => {
+    if (resetHistory) seenRef.current = []
+    const next = createRolesRound(nextMode, seenRef.current)
+    const poolSize = rolesPairsForMode(nextMode).length
+    const maxExclude = Math.max(0, poolSize - ROLE_ROUND_SIZE)
+    const seen = [...seenRef.current, ...next.pairs.map((p) => p.id)]
+    seenRef.current =
+      seen.length > maxExclude ? seen.slice(seen.length - maxExclude) : seen
+    setRound(next)
+    setSelectedTerm(null)
+    setMatched(new Set())
+    setWrongFlash(null)
+    setRoundWrong(0)
+  }, [])
+
+  const handleMode = (value) => {
+    setMode(value)
+    startRound(value, true)
+  }
+
+  const handleTermClick = (termId) => {
+    if (matched.has(termId)) return
+    setSelectedTerm((prev) => (prev === termId ? null : termId))
+  }
+
+  const handleDefClick = (defId) => {
+    if (!selectedTerm || matched.has(defId)) return
+    if (selectedTerm === defId) {
+      const isFinalPair = round && matched.size + 1 === round.pairs.length
+      setMatched((prev) => new Set(prev).add(defId))
+      setSelectedTerm(null)
+      setStats((s) => ({
+        ...s,
+        correct: s.correct + 1,
+        rounds: isFinalPair ? s.rounds + 1 : s.rounds,
+      }))
+    } else {
+      setWrongFlash({ termId: selectedTerm, defId })
+      setRoundWrong((n) => n + 1)
+      setStats((s) => ({ ...s, wrong: s.wrong + 1 }))
+      window.setTimeout(() => setWrongFlash(null), 500)
+      setSelectedTerm(null)
+    }
+  }
+
+  const roundComplete = round && matched.size === round.pairs.length
+  const total = stats.correct + stats.wrong
+  const accuracy = total ? Math.round((stats.correct / total) * 100) : 0
+
+  return (
+    <div className="agile-match">
+      <p className="agile-exams__lede">
+        Critical RACI to memorise. Tap an artifact, then tap who is
+        Responsible and Accountable. Several artifacts share the same pair
+        &mdash; each round only shows unique answers so the match is unambiguous.
+      </p>
+      <div className="agile-toolbar">
+        <label className="agile-field">
+          <span>Match</span>
+          <select value={mode} onChange={(e) => handleMode(e.target.value)}>
+            {Object.entries(ROLE_MODES).map(([code, name]) => (
+              <option key={code} value={code}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          className="agile-btn"
+          onClick={() => startRound(mode)}
+        >
+          New round
+        </button>
+      </div>
+
+      <div className="agile-statbar">
+        <div className="agile-statbar__item agile-statbar__item--good">
+          <span className="agile-statbar__num">{stats.correct}</span>
+          <span className="agile-statbar__label">Right</span>
+        </div>
+        <div className="agile-statbar__item agile-statbar__item--bad">
+          <span className="agile-statbar__num">{stats.wrong}</span>
+          <span className="agile-statbar__label">Wrong</span>
+        </div>
+        <div className="agile-statbar__item">
+          <span className="agile-statbar__num">{accuracy}%</span>
+          <span className="agile-statbar__label">Accuracy</span>
+        </div>
+        <div className="agile-statbar__item">
+          <span className="agile-statbar__num">{stats.rounds}</span>
+          <span className="agile-statbar__label">Rounds</span>
+        </div>
+        <button
+          type="button"
+          className="agile-btn agile-btn--ghost"
+          onClick={() => setStats({ ...DEFAULT_MATCHING })}
+        >
+          Reset stats
+        </button>
+      </div>
+
+      {roundComplete && (
+        <div className="agile-round-done">
+          Round complete! {round.pairs.length} matched
+          {roundWrong > 0
+            ? ` · ${roundWrong} wrong attempt${roundWrong > 1 ? 's' : ''}`
+            : ' with no mistakes 🎉'}
+          .
+          <button
+            type="button"
+            className="agile-btn agile-btn--primary"
+            onClick={() => startRound(mode)}
+          >
+            Play again
+          </button>
+        </div>
+      )}
+
+      {round && (
+        <div className="agile-match__grid">
+          <div className="agile-match__col">
+            <h3>Artifacts</h3>
+            {round.terms.map((t) => {
+              const isMatched = matched.has(t.id)
+              const isSelected = selectedTerm === t.id
+              const isWrong = wrongFlash?.termId === t.id
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  disabled={isMatched}
+                  className={[
+                    'agile-match__item',
+                    isMatched ? 'is-matched' : '',
+                    isSelected ? 'is-selected' : '',
+                    isWrong ? 'is-wrong' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onClick={() => handleTermClick(t.id)}
+                >
+                  {t.text}
+                </button>
+              )
+            })}
+          </div>
+          <div className="agile-match__col">
+            <h3>
+              {mode === 'responsible'
+                ? 'Responsible'
+                : mode === 'accountable'
+                  ? 'Accountable'
+                  : 'Responsible / Accountable'}
+            </h3>
+            {round.defs.map((d) => {
+              const isMatched = matched.has(d.id)
+              const isWrong = wrongFlash?.defId === d.id
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  disabled={isMatched}
+                  className={[
+                    'agile-match__item',
+                    isMatched ? 'is-matched' : '',
+                    isWrong ? 'is-wrong' : '',
+                    selectedTerm && !isMatched ? 'is-targetable' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onClick={() => handleDefClick(d.id)}
+                >
+                  {d.responsible && d.accountable ? (
+                    <span className="agile-match__raci">
+                      <span>
+                        <span className="agile-match__raci-k">R</span>{' '}
+                        {d.responsible}
+                      </span>
+                      <span>
+                        <span className="agile-match__raci-k">A</span>{' '}
+                        {d.accountable}
+                      </span>
+                    </span>
+                  ) : (
+                    d.text
+                  )}
                 </button>
               )
             })}

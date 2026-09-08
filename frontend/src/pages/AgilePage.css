@@ -473,6 +473,19 @@
   border-color: var(--ag-bad);
   background: rgba(255, 93, 108, 0.18);
 }
+.agile-match__raci {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.agile-match__raci-k {
+  display: inline-block;
+  min-width: 12px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: var(--ag-accent);
+}
 @keyframes agile-shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-6px); }

@@ -339,6 +339,29 @@ export const MATCHING_PAIRS = [
 ]
 
 // ---------------------------------------------------------------------------
+// Critical RACI table used by the Roles matching game.
+// Each row is one project artifact with who is Responsible and Accountable.
+// ---------------------------------------------------------------------------
+export const RACI_TABLE = [
+  { id: 'raci-tor', artifact: 'Terms of Reference', responsible: 'Business Visionary', accountable: 'Business Sponsor' },
+  { id: 'raci-bc', artifact: 'Business Case', responsible: 'Business Visionary', accountable: 'Business Sponsor' },
+  { id: 'raci-solback', artifact: 'Solution Backlog', responsible: 'Business Visionary', accountable: 'Business Visionary' },
+  { id: 'raci-sad', artifact: 'Solution Architecture Def (SAD)', responsible: 'Solution Architect', accountable: 'Business Visionary' },
+  { id: 'raci-dad', artifact: 'Delivery Approach Def (DAD)', responsible: 'Solution Architect', accountable: 'Project Manager' },
+  { id: 'raci-dplan', artifact: 'Delivery Plan', responsible: 'Project Manager', accountable: 'Project Manager' },
+  { id: 'raci-mad', artifact: 'Management Approach Def (MAD)', responsible: 'Project Manager', accountable: 'Business Sponsor' },
+  { id: 'raci-feas', artifact: 'Feasibility Assessment', responsible: 'Project Manager', accountable: 'Business Sponsor' },
+  { id: 'raci-found', artifact: 'Foundations Summary', responsible: 'Project Manager', accountable: 'Business Sponsor' },
+  { id: 'raci-pback', artifact: 'Product Backlog', responsible: 'Product Owner', accountable: 'Business Visionary' },
+  { id: 'raci-sback', artifact: 'Sprint Backlog', responsible: 'Developers', accountable: 'Product Owner' },
+  { id: 'raci-srev', artifact: 'Sprint Review Record', responsible: 'Scrum Master / Team Leader', accountable: 'SA / BV / PO' },
+  { id: 'raci-prev', artifact: 'Project Review Report', responsible: 'Project Manager', accountable: 'Business Visionary' },
+  { id: 'raci-ben', artifact: 'Benefits Assessment', responsible: 'Business Visionary', accountable: 'Business Sponsor' },
+  { id: 'raci-solinc', artifact: 'Solution Increment', responsible: 'Project Organisation', accountable: 'Business Visionary' },
+  { id: 'raci-prodinc', artifact: 'Product Increment', responsible: 'Delivery Team', accountable: 'Product Owner' },
+]
+
+// ---------------------------------------------------------------------------
 // Question bank: { id, topic, q, options[], correct (must match an option), explain }
 // Each mock paper samples 50 questions, weighted by EXAM_WEIGHTING, then
 // shuffles both question order and option order.
