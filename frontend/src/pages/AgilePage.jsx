@@ -28,6 +28,12 @@ import {
 } from '../data/agileContent.js'
 import { HARD_EXAMS, TOPIC_TIPS } from '../data/agileHardExams.js'
 import { DOC_MOCK_EXAMS } from '../data/agileDocMockExams.js'
+import {
+  FINAL_BOOKS,
+  FINAL_MOCK_EXAMS,
+  finalPaperNumber,
+  papersInBook,
+} from '../data/agileFinalMocks.js'
 import { ZEN_QUESTIONS } from '../data/agileZenQuestions.js'
 import './AgilePage.css'
 
@@ -92,6 +98,7 @@ function buildZenPool() {
     ...TOPIC_EXAMS.flatMap((e) => e.questions),
     ...HARD_EXAMS.flatMap((e) => e.questions),
     ...DOC_MOCK_EXAMS.flatMap((e) => e.questions),
+    ...FINAL_MOCK_EXAMS.flatMap((e) => e.questions),
   ]
   const seen = new Set()
   const pool = []
@@ -536,7 +543,7 @@ function AgilePageInner() {
               Roles
             </TabButton>
             <TabButton
-              active={mode === 'exams'}
+              active={mode === 'exams' || mode === 'finals'}
               onClick={() => setMode('exams')}
             >
               Mock Exams
@@ -560,7 +567,12 @@ function AgilePageInner() {
         {mode === 'flashcards' && <FlashcardsView />}
         {mode === 'matching' && <MatchingView />}
         {mode === 'roles' && <RolesView />}
-        {mode === 'exams' && <ExamsView />}
+        {(mode === 'exams' || mode === 'finals') && (
+          <ExamsView
+            key={mode}
+            startLibrary={mode === 'finals' ? 'finals' : null}
+          />
+        )}
         {mode === 'zen' && <ZenView />}
         {mode === 'wrongbank' && <WrongBankView />}
       </main>
@@ -648,10 +660,24 @@ function HomeView({ onPick }) {
           <span className="agile-card__emoji" aria-hidden>
             📝
           </span>
-          <h2>Mock Exams</h2>
+          <h2>Practice library</h2>
           <p>
-            Nine full exam-style papers, a 10-paper practice pack, and two
-            extra realistic papers: 50 questions, 40 minutes, 60% to pass.
+            Full mocks, the 10-paper practice pack, realistic papers, topic
+            drills and randomised sits — 50 questions, 40 minutes, 60% to pass.
+          </p>
+        </button>
+        <button
+          type="button"
+          className="agile-card"
+          onClick={() => onPick('finals')}
+        >
+          <span className="agile-card__emoji" aria-hidden>
+            📘
+          </span>
+          <h2>Final series</h2>
+          <p>
+            30 hard official-style papers in three exam books. Same APMG
+            format as the real Foundation paper — not mixed with practice sits.
           </p>
         </button>
         <button
@@ -2186,7 +2212,7 @@ function WrongBankView() {
   )
 }
 
-function ExamsView() {
+function ExamsView({ startLibrary = null }) {
   // active = { key, title, build } describing the paper to run.
   const [active, setActive] = useState(null)
   // Completed-paper snapshots saved on this device, newest first.
@@ -2198,6 +2224,10 @@ function ExamsView() {
   // When set, the card Review button is showing every saved sitting of
   // that one paper (newest first).
   const [reviewingPaper, setReviewingPaper] = useState(null)
+  // null = library chooser; 'practice' = existing mocks; 'finals' = 30-paper series.
+  const [library, setLibrary] = useState(startLibrary)
+  // Which 10-paper booklet is open inside the Final series.
+  const [finalBook, setFinalBook] = useState(1)
   const { examResults: results, recordExam, cloud, attempts, addWrongQuestions } =
     useAgileProgress()
 
@@ -2276,7 +2306,7 @@ function ExamsView() {
           className="agile-btn agile-btn--ghost agile-exams__back"
           onClick={() => setReviewingPaper(null)}
         >
-          ‹ Back to exams
+          ‹ Back to papers
         </button>
         <h1 className="agile-exams__title">
           Past attempts — {reviewingPaper.title}
@@ -2352,6 +2382,71 @@ function ExamsView() {
     )
   }
 
+  const finalsSat = FINAL_MOCK_EXAMS.filter((p) => results[p.id]).length
+  const finalsPassed = FINAL_MOCK_EXAMS.filter((p) => results[p.id]?.passed).length
+  const activeBook =
+    FINAL_BOOKS.find((b) => b.id === finalBook) ?? FINAL_BOOKS[0]
+  const bookPapers = papersInBook(activeBook)
+
+  const renderPaperRow = (paper) => {
+    const key = paper.id
+    const title = paper.title
+    const r = results[key]
+    const past = pastFor(key)
+    const n = finalPaperNumber(paper)
+    return (
+      <li key={key} className="agile-paper-row">
+        <span className="agile-paper-row__num">{String(n).padStart(2, '0')}</span>
+        <div className="agile-paper-row__main">
+          <h2>{title}</h2>
+          {r ? (
+            <p>
+              Best {r.bestPercent}% · last {r.lastScore}/
+              {r.total ?? EXAM_CONFIG.questionCount} · {r.attempts} attempt
+              {r.attempts === 1 ? '' : 's'}
+            </p>
+          ) : (
+            <p>Not sat yet · 50 questions · 40 minutes · 30/50 to pass</p>
+          )}
+        </div>
+        {r?.passed != null ? (
+          <span
+            className={`agile-pill ${
+              r.passed ? 'agile-pill--pass' : 'agile-pill--fail'
+            }`}
+          >
+            {r.passed ? 'PASSED' : 'NOT YET'}
+          </span>
+        ) : (
+          <span className="agile-paper-row__fresh">Ready</span>
+        )}
+        <div className="agile-paper-row__actions">
+          <button
+            type="button"
+            className="agile-btn agile-btn--primary"
+            onClick={() =>
+              setActive({
+                key,
+                title,
+                build: () => buildFixedExam(paper),
+              })
+            }
+          >
+            {r ? 'Retake' : 'Start'}
+          </button>
+          <button
+            type="button"
+            className="agile-btn"
+            disabled={past.length === 0}
+            onClick={() => setReviewingPaper({ key, title })}
+          >
+            Review{past.length > 0 ? ` (${past.length})` : ''}
+          </button>
+        </div>
+      </li>
+    )
+  }
+
   const renderCard = (key, title, build) => {
     const r = results[key]
     const past = pastFor(key)
@@ -2411,12 +2506,136 @@ function ExamsView() {
     )
   }
 
+  if (!library) {
+    return (
+      <div className="agile-exams">
+        <h1 className="agile-exams__title">Exam libraries</h1>
+        <p className="agile-exams__lede">
+          Practice sits and the final series are kept apart so a hard
+          official-style paper is never mixed into a revision pack. Every
+          paper is still {EXAM_CONFIG.questionCount} questions,{' '}
+          {EXAM_CONFIG.durationMinutes} minutes, closed book,{' '}
+          {EXAM_CONFIG.passMark}/{EXAM_CONFIG.questionCount} to pass.
+        </p>
+        <div className="agile-exams__chooser">
+          <button
+            type="button"
+            className="agile-exams__choice"
+            onClick={() => setLibrary('practice')}
+          >
+            <span className="agile-exams__choice-kicker">Revision</span>
+            <h2>Practice library</h2>
+            <p>
+              Nine full mocks, the 10-paper practice pack, two realistic
+              papers, topic drills and randomised sits from the bank.
+            </p>
+            <span className="agile-exams__choice-go">Open practice library →</span>
+          </button>
+          <button
+            type="button"
+            className="agile-exams__choice agile-exams__choice--final"
+            onClick={() => setLibrary('finals')}
+          >
+            <span className="agile-exams__choice-kicker">Exam series</span>
+            <h2>Final series · 30 papers</h2>
+            <p>
+              Three official-style books of 10. Hardest stems, real APMG
+              question types, full syllabus weighting. Sit these as if it
+              is the real Foundation paper.
+            </p>
+            <span className="agile-exams__choice-go">
+              Open final series → {finalsSat}/{FINAL_MOCK_EXAMS.length || 30} sat
+            </span>
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (library === 'finals') {
+    return (
+      <div className="agile-exams">
+        <button
+          type="button"
+          className="agile-btn agile-btn--ghost agile-exams__back"
+          onClick={() => setLibrary(null)}
+        >
+          ‹ All exam libraries
+        </button>
+        <h1 className="agile-exams__title">Final examination series</h1>
+        <p className="agile-exams__lede">
+          30 original papers in the real APMG Foundation format: direct
+          questions, identify the missing word(s), numbered combinations
+          and two-statement true/false. Answers are scattered A–D. Closed
+          book — treat each sitting like the real exam.
+        </p>
+        <div className="agile-exams__meter" aria-label="Final series progress">
+          <span>
+            {finalsPassed} passed · {finalsSat} sat ·{' '}
+            {FINAL_MOCK_EXAMS.length || 30} papers
+          </span>
+          <div className="agile-progress-track agile-exams__meter-track">
+            <div
+              className="agile-progress-fill"
+              style={{
+                width: `${
+                  FINAL_MOCK_EXAMS.length
+                    ? Math.round((finalsSat / FINAL_MOCK_EXAMS.length) * 100)
+                    : 0
+                }%`,
+              }}
+            />
+          </div>
+        </div>
+        <div className="agile-exams__books" role="tablist" aria-label="Exam books">
+          {FINAL_BOOKS.map((book) => {
+            const papers = papersInBook(book)
+            const sat = papers.filter((p) => results[p.id]).length
+            const active = book.id === activeBook.id
+            return (
+              <button
+                key={book.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={`agile-exams__book${active ? ' is-active' : ''}`}
+                onClick={() => setFinalBook(book.id)}
+              >
+                <strong>{book.label}</strong>
+                <span>{book.range}</span>
+                <em>
+                  {sat}/{papers.length || 10} sat
+                </em>
+              </button>
+            )
+          })}
+        </div>
+        <p className="agile-exams__note">{activeBook.blurb}</p>
+        {bookPapers.length ? (
+          <ol className="agile-paper-list">{bookPapers.map(renderPaperRow)}</ol>
+        ) : (
+          <p className="agile-empty">
+            This book is still being assembled. Open another book or the
+            practice library in the meantime.
+          </p>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="agile-exams">
-      <h1 className="agile-exams__title">Mock Exams</h1>
+      <button
+        type="button"
+        className="agile-btn agile-btn--ghost agile-exams__back"
+        onClick={() => setLibrary(null)}
+      >
+        ‹ All exam libraries
+      </button>
+      <h1 className="agile-exams__title">Practice library</h1>
       <p className="agile-exams__lede">
-        Every paper follows the real exam format:{' '}
-        {EXAM_CONFIG.questionCount} questions, a{' '}
+        Revision papers for drilling. Every paper still follows the real
+        exam format: {EXAM_CONFIG.questionCount} questions, a{' '}
         {EXAM_CONFIG.durationMinutes}-minute timer, and a pass mark of{' '}
         {EXAM_CONFIG.passMark}/{EXAM_CONFIG.questionCount} (
         {EXAM_CONFIG.passPercent}%). Closed book. Tap an option and
