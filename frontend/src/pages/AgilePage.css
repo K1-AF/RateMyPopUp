@@ -525,6 +525,161 @@
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 18px;
 }
+
+/* Two-library chooser — practice vs official-style final series */
+.agile-exams__chooser {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+.agile-exams__choice {
+  text-align: left;
+  background: var(--ag-card);
+  border: 1px solid var(--ag-border);
+  border-radius: 16px;
+  padding: 24px 22px;
+  color: var(--ag-text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 220px;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.agile-exams__choice:hover {
+  border-color: var(--ag-accent);
+  transform: translateY(-2px);
+}
+.agile-exams__choice--final {
+  background: linear-gradient(180deg, #24285a 0%, var(--ag-card) 70%);
+  border-color: #3d4490;
+}
+.agile-exams__choice-kicker {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--ag-accent);
+}
+.agile-exams__choice h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+.agile-exams__choice p {
+  margin: 0;
+  color: var(--ag-muted);
+  line-height: 1.55;
+  flex: 1;
+}
+.agile-exams__choice-go {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ag-accent);
+}
+
+/* Final series booklet nav + compact paper list */
+.agile-exams__meter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 20px;
+  color: var(--ag-muted);
+  font-size: 0.88rem;
+}
+.agile-exams__meter-track {
+  margin: 0;
+  max-width: 420px;
+}
+.agile-exams__books {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+}
+.agile-exams__book {
+  text-align: left;
+  background: var(--ag-card);
+  border: 1px solid var(--ag-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--ag-text);
+  cursor: pointer;
+  display: grid;
+  gap: 2px;
+}
+.agile-exams__book span,
+.agile-exams__book em {
+  font-size: 0.78rem;
+  color: var(--ag-muted);
+  font-style: normal;
+}
+.agile-exams__book.is-active {
+  border-color: var(--ag-accent);
+  background: rgba(108, 140, 255, 0.12);
+}
+.agile-paper-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.agile-paper-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  background: var(--ag-card);
+  border: 1px solid var(--ag-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.agile-paper-row__num {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ag-accent);
+}
+.agile-paper-row__main h2 {
+  margin: 0;
+  font-size: 1.02rem;
+}
+.agile-paper-row__main p {
+  margin: 4px 0 0;
+  color: var(--ag-muted);
+  font-size: 0.82rem;
+}
+.agile-paper-row__fresh {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--ag-muted);
+}
+.agile-paper-row__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  .agile-exams__books {
+    grid-template-columns: 1fr;
+  }
+  .agile-paper-row {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+  .agile-paper-row .agile-pill,
+  .agile-paper-row__fresh {
+    grid-column: 2;
+  }
+  .agile-paper-row__actions {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+  .agile-paper-row__actions .agile-btn {
+    flex: 1;
+  }
+}
 .agile-exam-card {
   background: var(--ag-card);
   border: 1px solid var(--ag-border);
