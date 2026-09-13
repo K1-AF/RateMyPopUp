@@ -152,6 +152,27 @@
   color: var(--ag-muted);
   margin: 0 0 28px;
 }
+.agile-home__level {
+  font-size: 1.35rem;
+  margin: 36px 0 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ag-border);
+}
+.agile-home__level:first-of-type {
+  margin-top: 8px;
+}
+.agile-home__level-lede {
+  color: var(--ag-muted);
+  margin: 0 0 16px;
+  font-size: 0.92rem;
+}
+.agile-card--pract {
+  background: linear-gradient(180deg, #24285a 0%, var(--ag-card) 70%);
+  border-color: #3d4490;
+}
+.agile-examfacts--pract {
+  margin-bottom: 12px;
+}
 .agile-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -1426,4 +1447,186 @@
   font-size: 0.9rem;
   color: var(--ag-muted);
   line-height: 1.5;
+}
+
+/* Practitioner booklet runner */
+.agile-pr {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.agile-pr__bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.agile-pr__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 160px;
+  font-size: 0.85rem;
+  color: var(--ag-muted);
+}
+.agile-pr__meta strong {
+  color: var(--ag-text);
+  font-size: 0.98rem;
+}
+.agile-pr__chart {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.agile-pr__qblock {
+  background: var(--ag-card);
+  border: 1px solid var(--ag-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.agile-pr__qcode {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: var(--ag-accent);
+  margin-bottom: 8px;
+}
+.agile-pr__parts {
+  display: flex;
+  gap: 6px;
+}
+.agile-pr__pill {
+  flex: 1;
+  background: var(--ag-card-2);
+  border: 1px solid var(--ag-border);
+  color: var(--ag-muted);
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.78rem;
+  padding: 6px 0;
+  cursor: pointer;
+}
+.agile-pr__pill.is-current {
+  color: #fff;
+  border-color: var(--ag-accent);
+  box-shadow: 0 0 0 2px rgba(108, 140, 255, 0.35);
+}
+.agile-pr__pill.is-partial {
+  background: rgba(255, 184, 77, 0.18);
+  color: var(--ag-warn);
+}
+.agile-pr__pill.is-done {
+  background: rgba(46, 204, 143, 0.18);
+  color: var(--ag-good);
+}
+.agile-pr__tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.agile-pr__tab {
+  background: var(--ag-card);
+  border: 1px solid var(--ag-border);
+  color: var(--ag-muted);
+  border-radius: 10px 10px 0 0;
+  padding: 8px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.agile-pr__tab.is-active {
+  color: #fff;
+  background: #1a1f3d;
+  border-bottom-color: #1a1f3d;
+}
+.agile-pr__booklet,
+.agile-pr__q {
+  background: var(--ag-card);
+  border: 1px solid var(--ag-border);
+  border-radius: 0 14px 14px 14px;
+  padding: 20px 22px;
+}
+.agile-pr__booklet h2,
+.agile-pr__booklet h3 {
+  margin: 0 0 10px;
+}
+.agile-pr__booklet p {
+  color: var(--ag-muted);
+  line-height: 1.55;
+  margin: 0 0 12px;
+}
+.agile-pr__qhead {
+  margin-bottom: 16px;
+}
+.agile-pr__instruction,
+.agile-pr__extra-hint {
+  color: var(--ag-muted);
+  line-height: 1.5;
+  margin: 8px 0 0;
+}
+.agile-pr__extra-hint {
+  color: var(--ag-warn);
+  font-weight: 600;
+}
+.agile-pr__stem h2 {
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+.agile-pr__because {
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: var(--ag-accent);
+}
+.agile-pr__ar-key {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 8px;
+}
+.agile-pr__col2-label {
+  color: var(--ag-muted);
+  font-size: 0.88rem;
+}
+.agile-pr__grid-wrap {
+  margin-top: 22px;
+  overflow-x: auto;
+}
+.agile-pr__grid-hint {
+  font-size: 0.8rem;
+  color: var(--ag-muted);
+  margin: 0 0 8px;
+}
+.agile-pr__grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.agile-pr__grid th,
+.agile-pr__grid td {
+  text-align: center;
+  padding: 6px;
+  border-bottom: 1px solid var(--ag-border);
+}
+.agile-pr__grid tbody tr.is-active {
+  background: rgba(108, 140, 255, 0.1);
+}
+.agile-pr__oval {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--ag-muted);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.agile-pr__oval.is-on {
+  background: var(--ag-accent);
+  border-color: var(--ag-accent);
+}
+@media (max-width: 800px) {
+  .agile-pr__chart {
+    grid-template-columns: 1fr 1fr;
+  }
 }
