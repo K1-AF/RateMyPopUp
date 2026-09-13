@@ -34,7 +34,23 @@ import {
   finalPaperNumber,
   papersInBook,
 } from '../data/agileFinalMocks.js'
+import {
+  AR_OPTIONS,
+  OFFICIAL_PRACTITIONER_SAMPLE,
+  PRACTITIONER_CONFIG,
+  PRACTITIONER_EXAMS,
+  PRACTITIONER_TOPICS,
+  flattenPractitioner,
+  practitionerCorrectLabel,
+  practitionerStem,
+  scorePractitionerLine,
+} from '../data/agilePractitioner.js'
 import { ZEN_QUESTIONS } from '../data/agileZenQuestions.js'
+import {
+  PractitionerReview,
+  PractitionerRunner,
+  isPractitionerSnapshot,
+} from './PractitionerExam.jsx'
 import './AgilePage.css'
 
 // ---------------------------------------------------------------------------
@@ -503,7 +519,7 @@ function AgilePageInner() {
   // Keep the browser tab title clear while studying; restore on unmount.
   useEffect(() => {
     const prev = document.title
-    document.title = 'AgilePM v3 Foundation — Study'
+    document.title = 'AgilePM v3 — Study'
     return () => {
       document.title = prev
     }
@@ -518,7 +534,7 @@ function AgilePageInner() {
             className="agile-brand"
             onClick={() => setMode('home')}
           >
-            AgilePM <span>v3 Foundation</span>
+            AgilePM <span>v3</span>
           </button>
           <nav className="agile-tabs" aria-label="Study modes">
             <TabButton active={mode === 'home'} onClick={() => setMode('home')}>
@@ -543,7 +559,11 @@ function AgilePageInner() {
               Roles
             </TabButton>
             <TabButton
-              active={mode === 'exams' || mode === 'finals'}
+              active={
+                mode === 'exams' ||
+                mode === 'finals' ||
+                mode === 'practitioner'
+              }
               onClick={() => setMode('exams')}
             >
               Mock Exams
@@ -567,10 +587,18 @@ function AgilePageInner() {
         {mode === 'flashcards' && <FlashcardsView />}
         {mode === 'matching' && <MatchingView />}
         {mode === 'roles' && <RolesView />}
-        {(mode === 'exams' || mode === 'finals') && (
+        {(mode === 'exams' ||
+          mode === 'finals' ||
+          mode === 'practitioner') && (
           <ExamsView
             key={mode}
-            startLibrary={mode === 'finals' ? 'finals' : null}
+            startLibrary={
+              mode === 'finals'
+                ? 'finals'
+                : mode === 'practitioner'
+                  ? 'practitioner'
+                  : null
+            }
           />
         )}
         {mode === 'zen' && <ZenView />}
@@ -580,7 +608,8 @@ function AgilePageInner() {
       <footer className="agile-footer">
         Private study area · {FLASHCARDS.length} flashcards ·{' '}
         {MATCHING_PAIRS.length} matching pairs · {RACI_TABLE.length} RACI
-        artifacts · {ZEN_POOL_SIZE}-question Zen pool · Good luck on the exam.
+        artifacts · {ZEN_POOL_SIZE}-question Zen pool ·{' '}
+        {PRACTITIONER_EXAMS.length} Practitioner papers · Good luck on the exam.
       </footer>
     </div>
   )
@@ -604,10 +633,15 @@ function TabButton({ active, onClick, children }) {
 function HomeView({ onPick }) {
   return (
     <div className="agile-home">
-      <h1 className="agile-home__title">AgilePM v3 Foundation Revision</h1>
+      <h1 className="agile-home__title">AgilePM v3 Revision</h1>
       <p className="agile-home__lede">
-        A private study toolkit built from your notes. Pick a mode to get
-        started.
+        A private study toolkit. Foundation tools sit at the top. Practitioner
+        scenario papers sit in their own section underneath.
+      </p>
+
+      <h2 className="agile-home__level">Foundation</h2>
+      <p className="agile-home__level-lede">
+        Closed book · 50 questions · 40 minutes · 30/50 (60%) to pass
       </p>
       <div className="agile-cards">
         <button
@@ -712,7 +746,7 @@ function HomeView({ onPick }) {
         </button>
       </div>
       <div className="agile-examfacts">
-        <h3>Real exam format</h3>
+        <h3>Foundation exam format</h3>
         <ul>
           <li>
             <strong>{EXAM_CONFIG.questionCount}</strong> multiple-choice
@@ -726,6 +760,66 @@ function HomeView({ onPick }) {
             {EXAM_CONFIG.passMark}/{EXAM_CONFIG.questionCount})
           </li>
           <li>Closed book</li>
+        </ul>
+      </div>
+
+      <h2 className="agile-home__level" id="practitioner">
+        Practitioner
+      </h2>
+      <p className="agile-home__level-lede">
+        Open book (official handbook only) · 80 objective-test lines · 150
+        minutes · 40/80 (50%) to pass
+      </p>
+      <div className="agile-cards">
+        <a
+          className="agile-card agile-card--official"
+          href={OFFICIAL_PRACTITIONER_SAMPLE.href}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span className="agile-card__emoji" aria-hidden>
+            🏛️
+          </span>
+          <h2>Official APMG sample</h2>
+          <p>
+            The real AgilePM v3 Practitioner sample on APMG’s exam player.
+            Choose AgilePM (v3) Practitioner from the list — their paper
+            stays on their site.
+          </p>
+        </a>
+        <button
+          type="button"
+          className="agile-card agile-card--pract"
+          onClick={() => onPick('practitioner')}
+        >
+          <span className="agile-card__emoji" aria-hidden>
+            📋
+          </span>
+          <h2>Practitioner mocks</h2>
+          <p>
+            Five original scenario papers in the official booklet layout:
+            classic, select-2, matching and assertion/reason. Shared project
+            scenario, additional information, and an option grid.
+          </p>
+        </button>
+      </div>
+      <div className="agile-examfacts agile-examfacts--pract">
+        <h3>Practitioner exam format</h3>
+        <ul>
+          <li>
+            <strong>4</strong> syllabus questions · <strong>20</strong> lines
+            each
+          </li>
+          <li>
+            <strong>{PRACTITIONER_CONFIG.questionCount}</strong> marks ·{' '}
+            <strong>{PRACTITIONER_CONFIG.durationMinutes} minutes</strong>
+          </li>
+          <li>
+            Pass mark <strong>{PRACTITIONER_CONFIG.passPercent}%</strong> (
+            {PRACTITIONER_CONFIG.passMark}/{PRACTITIONER_CONFIG.questionCount}
+            )
+          </li>
+          <li>Open book — official handbook only</li>
         </ul>
       </div>
     </div>
@@ -2163,7 +2257,9 @@ function WrongBankView() {
           {entries.map((e) => (
             <li key={e.id} className="agile-review__item is-wrong">
               <div className="agile-wrongbank__itemhead">
-                <span className="agile-review__topic">{TOPICS[e.topic]}</span>
+                <span className="agile-review__topic">
+                  {TOPICS[e.topic] || PRACTITIONER_TOPICS[e.topic] || e.topic}
+                </span>
                 <span className="agile-wrongbank__meta">
                   {e.from}
                   {e.addedAt
@@ -2224,8 +2320,22 @@ function ExamsView({ startLibrary = null }) {
   // When set, the card Review button is showing every saved sitting of
   // that one paper (newest first).
   const [reviewingPaper, setReviewingPaper] = useState(null)
-  // null = library chooser; 'practice' = existing mocks; 'finals' = 30-paper series.
-  const [library, setLibrary] = useState(startLibrary)
+  // null = Foundation + Practitioner hub; 'practice' / 'finals' drill in.
+  // 'practitioner' from Home only scrolls to the Practitioner block.
+  const [library, setLibrary] = useState(
+    startLibrary === 'practitioner' ? null : startLibrary,
+  )
+
+  useEffect(() => {
+    if (startLibrary !== 'practitioner' || library) return undefined
+    const t = window.setTimeout(() => {
+      document.getElementById('agile-practitioner')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }, 50)
+    return () => window.clearTimeout(t)
+  }, [startLibrary, library])
   // Which 10-paper booklet is open inside the Final series.
   const [finalBook, setFinalBook] = useState(1)
   const { examResults: results, recordExam, cloud, attempts, addWrongQuestions } =
@@ -2251,21 +2361,45 @@ function ExamsView({ startLibrary = null }) {
     }
     setSavedMocks((prev) => [entry, ...prev].slice(0, MAX_SAVED_MOCKS))
     // Every missed question automatically joins the wrong-question bank.
-    addWrongQuestions(
-      exam
-        .filter((q) => answers[q.id] !== q.correct)
-        .map((q) => ({
-          id: q.id,
-          topic: q.topic,
-          q: q.q,
-          options: q.options,
-          correct: q.correct,
-          explain: q.explain ?? '',
-          chosen: answers[q.id] ?? null,
-          from: title,
-          addedAt: new Date().toISOString(),
-        })),
-    )
+    if (isPractitionerSnapshot(exam)) {
+      addWrongQuestions(
+        flattenPractitioner(exam.paper)
+          .filter((q) => !scorePractitionerLine(q, answers[q.id]))
+          .map((q) => ({
+            id: q.id,
+            topic: q.topic,
+            q: practitionerStem(q),
+            options:
+              q.options ??
+              (q.type === 'ar'
+                ? AR_OPTIONS.map((o) => `${o.key}. ${o.text}`)
+                : (q.column2 ?? []).map((o) => `${o.key}. ${o.text}`)),
+            correct: practitionerCorrectLabel(q),
+            explain: q.explain ?? '',
+            chosen: Array.isArray(answers[q.id])
+              ? answers[q.id].join(' + ')
+              : (answers[q.id] ?? null),
+            from: title,
+            addedAt: new Date().toISOString(),
+          })),
+      )
+    } else {
+      addWrongQuestions(
+        exam
+          .filter((q) => answers[q.id] !== q.correct)
+          .map((q) => ({
+            id: q.id,
+            topic: q.topic,
+            q: q.q,
+            options: q.options,
+            correct: q.correct,
+            explain: q.explain ?? '',
+            chosen: answers[q.id] ?? null,
+            from: title,
+            addedAt: new Date().toISOString(),
+          })),
+      )
+    }
   }
 
   const deleteSaved = (id) => {
@@ -2279,19 +2413,30 @@ function ExamsView({ startLibrary = null }) {
 
   // Re-open a previously saved attempt in the full review screen.
   if (reviewing) {
+    const exitLabel = reviewingPaper ? 'Back to attempts' : 'Back to exams'
     return (
       <div className="agile-saved-review">
         <p className="agile-saved-review__meta">
           Reviewing saved attempt: <strong>{reviewing.title}</strong> ·{' '}
           {new Date(reviewing.savedAt).toLocaleString()}
         </p>
-        <ExamReview
-          exam={reviewing.exam}
-          answers={reviewing.answers}
-          result={reviewing.result}
-          exitLabel={reviewingPaper ? 'Back to attempts' : 'Back to exams'}
-          onExit={() => setReviewing(null)}
-        />
+        {isPractitionerSnapshot(reviewing.exam) ? (
+          <PractitionerReview
+            paper={reviewing.exam.paper}
+            answers={reviewing.answers}
+            result={reviewing.result}
+            exitLabel={exitLabel}
+            onExit={() => setReviewing(null)}
+          />
+        ) : (
+          <ExamReview
+            exam={reviewing.exam}
+            answers={reviewing.answers}
+            result={reviewing.result}
+            exitLabel={exitLabel}
+            onExit={() => setReviewing(null)}
+          />
+        )}
       </div>
     )
   }
@@ -2371,6 +2516,17 @@ function ExamsView({ startLibrary = null }) {
   }
 
   if (active) {
+    if (active.kind === 'practitioner') {
+      return (
+        <PractitionerRunner
+          paper={active.paper}
+          examKey={active.key}
+          title={active.title}
+          onExit={() => setActive(null)}
+          onFinish={onFinish}
+        />
+      )
+    }
     return (
       <ExamRunner
         examKey={active.key}
@@ -2507,13 +2663,16 @@ function ExamsView({ startLibrary = null }) {
   }
 
   if (!library) {
+    const practSat = PRACTITIONER_EXAMS.filter((p) => results[p.id]).length
+    const practPassed = PRACTITIONER_EXAMS.filter((p) => results[p.id]?.passed)
+      .length
     return (
       <div className="agile-exams">
-        <h1 className="agile-exams__title">Exam libraries</h1>
+        <h2 className="agile-home__level">Foundation</h2>
         <p className="agile-exams__lede">
-          Practice sits and the final series are kept apart so a hard
+          Practice sits and the final series stay apart so a hard
           official-style paper is never mixed into a revision pack. Every
-          paper is still {EXAM_CONFIG.questionCount} questions,{' '}
+          Foundation paper is {EXAM_CONFIG.questionCount} questions,{' '}
           {EXAM_CONFIG.durationMinutes} minutes, closed book,{' '}
           {EXAM_CONFIG.passMark}/{EXAM_CONFIG.questionCount} to pass.
         </p>
@@ -2548,6 +2707,89 @@ function ExamsView({ startLibrary = null }) {
             </span>
           </button>
         </div>
+
+        <h2 className="agile-home__level" id="agile-practitioner">
+          Practitioner
+        </h2>
+        <p className="agile-exams__lede">
+          Original scenario papers in the official 80-mark booklet layout:
+          four syllabus questions, 20 lines each, classic / select-2 /
+          matching / assertion-reason, scenario plus additional information.
+          Open book · {PRACTITIONER_CONFIG.durationMinutes} minutes ·{' '}
+          {PRACTITIONER_CONFIG.passMark}/{PRACTITIONER_CONFIG.questionCount} to
+          pass.
+        </p>
+        <div className="agile-exams__meter" aria-label="Practitioner progress">
+          <span>
+            {practPassed} passed · {practSat} sat · {PRACTITIONER_EXAMS.length}{' '}
+            papers
+          </span>
+        </div>
+        <ol className="agile-paper-list">
+          {PRACTITIONER_EXAMS.map((paper, i) => {
+            const key = paper.id
+            const r = results[key]
+            const past = pastFor(key)
+            return (
+              <li key={key} className="agile-paper-row">
+                <span className="agile-paper-row__num">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <div className="agile-paper-row__main">
+                  <h2>{paper.title}</h2>
+                  {r ? (
+                    <p>
+                      Best {r.bestPercent}% · last {r.lastScore}/
+                      {r.total ?? PRACTITIONER_CONFIG.questionCount} ·{' '}
+                      {r.attempts} attempt{r.attempts === 1 ? '' : 's'}
+                    </p>
+                  ) : (
+                    <p>
+                      {paper.project} · 80 lines · 150 minutes · 40/80 to pass
+                    </p>
+                  )}
+                </div>
+                {r?.passed != null ? (
+                  <span
+                    className={`agile-pill ${
+                      r.passed ? 'agile-pill--pass' : 'agile-pill--fail'
+                    }`}
+                  >
+                    {r.passed ? 'PASSED' : 'NOT YET'}
+                  </span>
+                ) : (
+                  <span className="agile-paper-row__fresh">Ready</span>
+                )}
+                <div className="agile-paper-row__actions">
+                  <button
+                    type="button"
+                    className="agile-btn agile-btn--primary"
+                    onClick={() =>
+                      setActive({
+                        kind: 'practitioner',
+                        key,
+                        title: paper.title,
+                        paper,
+                      })
+                    }
+                  >
+                    Start
+                  </button>
+                  <button
+                    type="button"
+                    className="agile-btn"
+                    disabled={past.length === 0}
+                    onClick={() =>
+                      setReviewingPaper({ key, title: paper.title })
+                    }
+                  >
+                    Review{past.length > 0 ? ` (${past.length})` : ''}
+                  </button>
+                </div>
+              </li>
+            )
+          })}
+        </ol>
       </div>
     )
   }
