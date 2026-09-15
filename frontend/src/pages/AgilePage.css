@@ -88,6 +88,14 @@
   color: #fff;
   background: linear-gradient(135deg, var(--ag-accent), var(--ag-accent-2));
 }
+.agile-tab--surprise:not(.agile-tab--active) {
+  color: #e4c56a;
+  border-color: rgba(228, 197, 106, 0.35);
+}
+.agile-tab--surprise.agile-tab--active {
+  background: linear-gradient(135deg, #c9a227, #f4d03f);
+  color: #1a1404;
+}
 
 .agile-main {
   flex: 1;
@@ -169,6 +177,16 @@
 .agile-card--pract {
   background: linear-gradient(180deg, #24285a 0%, var(--ag-card) 70%);
   border-color: #3d4490;
+}
+.agile-card--surprise {
+  background: linear-gradient(180deg, #3a2d12 0%, var(--ag-card) 72%);
+  border-color: #c9a227;
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+}
+.agile-card--surprise h2 {
+  margin: 0;
 }
 .agile-examfacts--pract {
   margin-bottom: 12px;
@@ -1628,5 +1646,353 @@
 @media (max-width: 800px) {
   .agile-pr__chart {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Who Wants to Be a Millionaire studio — scoped so it never leaks */
+.agile-milli {
+  --milli-gold: #f4d03f;
+  --milli-gold-2: #c9a227;
+  --milli-navy: #070b1c;
+  --milli-lozenge: #10183a;
+  color: #f4f1e4;
+}
+.agile-milli--intro,
+.agile-milli--over {
+  min-height: 58vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  background:
+    radial-gradient(900px 420px at 50% 0%, rgba(244, 208, 63, 0.18), transparent 60%),
+    linear-gradient(180deg, #0c1024 0%, var(--milli-navy) 100%);
+  border: 1px solid rgba(244, 208, 63, 0.28);
+  border-radius: 22px;
+}
+.agile-milli__kicker {
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--milli-gold);
+  margin: 0 0 14px;
+}
+.agile-milli__welcome {
+  font-size: clamp(1.4rem, 3.4vw, 2.15rem);
+  line-height: 1.35;
+  max-width: 18em;
+  margin: 0 0 18px;
+  color: #fff8dc;
+}
+.agile-milli__welcome--lost {
+  max-width: 22em;
+  font-size: clamp(1.15rem, 2.8vw, 1.7rem);
+}
+.agile-milli__welcome--won {
+  max-width: 16em;
+  font-size: clamp(1.7rem, 4vw, 2.6rem);
+  color: var(--milli-gold);
+}
+.agile-milli__chant {
+  font-size: clamp(1.05rem, 2.4vw, 1.45rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #fff;
+  margin: -6px 0 18px;
+  text-transform: none;
+}
+.agile-milli--won {
+  position: relative;
+}
+.agile-milli--won > :not(.agile-milli__confetti) {
+  position: relative;
+  z-index: 2;
+}
+.agile-milli__confetti {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 40;
+}
+.agile-milli__confetti-piece {
+  position: absolute;
+  top: -28px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+  animation-name: milli-confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes milli-confetti-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--drift, 0px), 110vh, 0) rotate(720deg);
+    opacity: 0.85;
+  }
+}
+.agile-milli__intro-lede,
+.agile-milli__takehome,
+.agile-milli__reveal {
+  max-width: 36rem;
+  color: var(--ag-muted);
+  margin: 0 0 22px;
+}
+.agile-milli__takehome strong,
+.agile-milli__reveal strong {
+  color: var(--milli-gold);
+}
+.agile-milli__start {
+  background: linear-gradient(135deg, var(--milli-gold-2), var(--milli-gold));
+  border-color: transparent;
+  color: #1a1404;
+  font-weight: 800;
+  padding: 12px 22px;
+}
+.agile-milli__start:hover:not(:disabled) {
+  border-color: transparent;
+  filter: brightness(1.05);
+}
+.agile-milli__toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.agile-milli__lifelines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.agile-milli__life {
+  min-width: 108px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 2px solid var(--milli-gold-2);
+  background: #12162c;
+  color: var(--milli-gold);
+  font-weight: 800;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+.agile-milli__life:hover:not(:disabled) {
+  background: rgba(244, 208, 63, 0.12);
+}
+.agile-milli__life:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.agile-milli__life.is-used {
+  text-decoration: line-through;
+  border-color: #5a4a24;
+  color: #8a7a52;
+}
+.agile-milli__bank {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--milli-gold);
+  font-weight: 700;
+}
+.agile-milli__stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 18px;
+  align-items: start;
+}
+.agile-milli__studio {
+  background: linear-gradient(180deg, #141a38 0%, #0b1024 100%);
+  border: 1px solid rgba(244, 208, 63, 0.22);
+  border-radius: 18px;
+  padding: 22px;
+}
+.agile-milli__for {
+  margin: 0 0 6px;
+  color: var(--milli-gold);
+  font-weight: 700;
+}
+.agile-milli__topic {
+  display: inline-block;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ag-muted);
+  margin-bottom: 8px;
+}
+.agile-milli__q {
+  margin: 0 0 20px;
+  font-size: 1.18rem;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+.agile-milli__answers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+}
+.agile-milli__answer {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  background: var(--milli-lozenge);
+  border: 2px solid #3a4678;
+  color: #f4f1e4;
+  border-radius: 999px;
+  padding: 12px 16px;
+  font-size: 0.92rem;
+  cursor: pointer;
+  min-height: 52px;
+}
+.agile-milli__answer:hover:not(:disabled) {
+  border-color: var(--milli-gold);
+}
+.agile-milli__letter {
+  color: var(--milli-gold);
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.agile-milli__answer.is-selected {
+  border-color: #ff9f1c;
+  background: rgba(255, 159, 28, 0.16);
+}
+.agile-milli__answer.is-correct {
+  border-color: #2ecc8f;
+  background: rgba(46, 204, 143, 0.18);
+}
+.agile-milli__answer.is-wrong {
+  border-color: var(--ag-bad);
+  background: rgba(255, 93, 108, 0.18);
+}
+.agile-milli__answer.is-gone {
+  opacity: 0.28;
+  text-decoration: line-through;
+}
+.agile-milli__note,
+.agile-milli__audience {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(244, 208, 63, 0.08);
+  border: 1px solid rgba(244, 208, 63, 0.22);
+  color: #f3e6b3;
+  font-size: 0.92rem;
+}
+.agile-milli__bars {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.agile-milli__bar span {
+  display: inline-block;
+  min-width: 52px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.agile-milli__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.agile-milli__bar-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: #1b2348;
+  overflow: hidden;
+}
+.agile-milli__bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--milli-gold-2), var(--milli-gold));
+}
+.agile-milli__actions {
+  margin-top: 20px;
+}
+.agile-milli__confirm,
+.agile-milli__win-step {
+  display: grid;
+  gap: 10px;
+}
+.agile-milli__confirm-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.agile-milli__ladder {
+  list-style: none;
+  margin: 0;
+  padding: 10px;
+  background: #0b1024;
+  border: 1px solid rgba(244, 208, 63, 0.22);
+  border-radius: 14px;
+  display: grid;
+  gap: 2px;
+}
+.agile-milli__rung {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: #9aa0c7;
+  font-size: 0.78rem;
+}
+.agile-milli__rung.is-won {
+  color: #d7c48a;
+}
+.agile-milli__rung.is-current {
+  background: linear-gradient(90deg, var(--milli-gold-2), var(--milli-gold));
+  color: #1a1404;
+  font-weight: 800;
+}
+.agile-milli__modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(4, 6, 16, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.agile-milli__modal-card {
+  background: #141a38;
+  border: 1px solid var(--milli-gold-2);
+  border-radius: 16px;
+  padding: 22px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+}
+@media (max-width: 860px) {
+  .agile-milli__stage {
+    grid-template-columns: 1fr;
+  }
+  .agile-milli__ladder {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .agile-milli__answers {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .agile-milli__answer,
+  .agile-milli__life,
+  .agile-milli__start {
+    transition: none;
+  }
+  .agile-milli__confetti-piece {
+    animation: none;
+    top: 18%;
+    opacity: 0.9;
   }
 }

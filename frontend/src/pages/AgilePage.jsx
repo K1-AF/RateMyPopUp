@@ -51,6 +51,7 @@ import {
   PractitionerRunner,
   isPractitionerSnapshot,
 } from './PractitionerExam.jsx'
+import MillionaireGame from './MillionaireGame.jsx'
 import './AgilePage.css'
 
 // ---------------------------------------------------------------------------
@@ -572,6 +573,13 @@ function AgilePageInner() {
               Zen Mode
             </TabButton>
             <TabButton
+              active={mode === 'surprise'}
+              onClick={() => setMode('surprise')}
+              className="agile-tab--surprise"
+            >
+              Suprise
+            </TabButton>
+            <TabButton
               active={mode === 'wrongbank'}
               onClick={() => setMode('wrongbank')}
             >
@@ -602,6 +610,7 @@ function AgilePageInner() {
           />
         )}
         {mode === 'zen' && <ZenView />}
+        {mode === 'surprise' && <MillionaireGame />}
         {mode === 'wrongbank' && <WrongBankView />}
       </main>
 
@@ -615,11 +624,13 @@ function AgilePageInner() {
   )
 }
 
-function TabButton({ active, onClick, children }) {
+function TabButton({ active, onClick, className, children }) {
   return (
     <button
       type="button"
-      className={`agile-tab${active ? ' agile-tab--active' : ''}`}
+      className={`agile-tab${active ? ' agile-tab--active' : ''}${
+        className ? ` ${className}` : ''
+      }`}
       onClick={onClick}
     >
       {children}
@@ -743,6 +754,13 @@ function HomeView({ onPick }) {
             Review each one with the correct answer and retry the whole bank
             whenever you want &mdash; getting one right does not remove it.
           </p>
+        </button>
+        <button
+          type="button"
+          className="agile-card agile-card--surprise"
+          onClick={() => onPick('surprise')}
+        >
+          <h2>Suprise</h2>
         </button>
       </div>
       <div className="agile-examfacts">
