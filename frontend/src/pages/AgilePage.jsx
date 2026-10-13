@@ -816,8 +816,8 @@ function HomeView({ onPick }) {
           <h2>Practitioner mocks</h2>
           <p>
             Five original scenario papers in the official booklet layout:
-            classic, select-2, matching and assertion/reason. Shared project
-            scenario, additional information, and an option grid.
+            classic, select-2, matching and assertion/reason. Each line is
+            marked right or wrong as soon as you answer it.
           </p>
         </button>
       </div>
@@ -2735,7 +2735,7 @@ function ExamsView({ startLibrary = null }) {
           matching / assertion-reason, scenario plus additional information.
           Open book · {PRACTITIONER_CONFIG.durationMinutes} minutes ·{' '}
           {PRACTITIONER_CONFIG.passMark}/{PRACTITIONER_CONFIG.questionCount} to
-          pass.
+          pass. Each line is marked as soon as you answer it.
         </p>
         <div className="agile-exams__meter" aria-label="Practitioner progress">
           <span>
