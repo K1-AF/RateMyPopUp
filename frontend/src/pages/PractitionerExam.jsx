@@ -13,12 +13,18 @@ import {
 } from '../data/agilePractitioner.js'
 
 // Official-style Practitioner sitting: scenario booklet, part instructions,
-// option grid, 150-minute clock. Answers stay hidden until the paper is
-// finished — the live exam does not mark line-by-line.
+// option grid, 150-minute clock. Each line is marked as soon as the answer
+// is complete, then locked so the key cannot be used to rewrite the score.
 
 function letterOf(option) {
   const m = String(option).match(/^([A-F])\b/)
   return m ? m[1] : option
+}
+
+/** A line can be marked once classic/matching/assertion has one choice, or select-2 has both. */
+function answerComplete(type, answer) {
+  if (type === 'mr') return Array.isArray(answer) && answer.length === 2
+  return answer != null && answer !== ''
 }
 
 export function PractitionerRunner({ paper, examKey, title, onExit, onFinish }) {
@@ -82,29 +88,40 @@ export function PractitionerRunner({ paper, examKey, title, onExit, onFinish }) 
     }
   }
 
+  // Commit the first complete selection. Later clicks are ignored so seeing
+  // the key cannot be used to flip a line from wrong to right.
+  const commitAnswer = (itemId, type, nextValue) => {
+    setAnswers((prev) => {
+      if (answerComplete(type, prev[itemId])) return prev
+      return { ...prev, [itemId]: nextValue }
+    })
+  }
+
   const setClassic = (opt) => {
-    setAnswers((prev) => ({ ...prev, [item.id]: opt }))
+    commitAnswer(item.id, 'classic', opt)
   }
 
   const setLetter = (key) => {
-    setAnswers((prev) => ({ ...prev, [item.id]: key }))
+    commitAnswer(item.id, bundle.part.type, key)
   }
 
   const toggleMr = (opt) => {
     setAnswers((prev) => {
       const cur = Array.isArray(prev[item.id]) ? [...prev[item.id]] : []
+      if (cur.length === 2) return prev
       const i = cur.indexOf(opt)
       if (i >= 0) cur.splice(i, 1)
-      else if (cur.length < 2) cur.push(opt)
+      else cur.push(opt)
       return { ...prev, [item.id]: cur }
     })
   }
 
-  const answeredCount = lines.filter((ln) => {
-    const a = answers[ln.id]
-    if (ln.type === 'mr') return Array.isArray(a) && a.length === 2
-    return a != null && a !== ''
-  }).length
+  const answeredLines = lines.filter((ln) => answerComplete(ln.type, answers[ln.id]))
+  const rightCount = answeredLines.filter((ln) =>
+    scorePractitionerLine(ln, answers[ln.id]),
+  ).length
+  const answeredCount = answeredLines.length
+  const wrongCount = answeredCount - rightCount
 
   const hh = String(Math.floor(secondsLeft / 3600)).padStart(2, '0')
   const mm = String(Math.floor((secondsLeft % 3600) / 60)).padStart(2, '0')
@@ -124,6 +141,7 @@ export function PractitionerRunner({ paper, examKey, title, onExit, onFinish }) 
 
   const extra = bundle.part.extra
   const q = bundle.question
+  const lineLocked = answerComplete(bundle.part.type, answers[item.id])
 
   return (
     <div className="agile-pr">
@@ -134,8 +152,8 @@ export function PractitionerRunner({ paper, examKey, title, onExit, onFinish }) 
         <div className="agile-pr__meta">
           <strong>{title}</strong>
           <span>
-            {answeredCount}/{PRACTITIONER_CONFIG.questionCount} answered · open
-            book
+            {rightCount} right · {wrongCount} wrong · {answeredCount}/
+            {PRACTITIONER_CONFIG.questionCount}
           </span>
         </div>
         <div
@@ -157,11 +175,15 @@ export function PractitionerRunner({ paper, examKey, title, onExit, onFinish }) 
                 const idx = paper.questions
                   .slice(0, qi)
                   .reduce((n, qq) => n + qq.parts.length, 0) + pi
-                const filled = part.items.filter((it) => {
-                  const a = answers[it.id]
-                  if (part.type === 'mr') return Array.isArray(a) && a.length === 2
-                  return a != null && a !== ''
-                }).length
+                const filled = part.items.filter((it) =>
+                  answerComplete(part.type, answers[it.id]),
+                ).length
+                const correctN = part.items.filter((it) =>
+                  scorePractitionerLine(
+                    { ...it, type: part.type },
+                    answers[it.id],
+                  ),
+                ).length
                 const all = filled === part.items.length
                 const some = filled > 0 && !all
                 return (
@@ -171,7 +193,8 @@ export function PractitionerRunner({ paper, examKey, title, onExit, onFinish }) 
                     className={[
                       'agile-pr__pill',
                       idx === partIdx ? 'is-current' : '',
-                      all ? 'is-done' : '',
+                      all && correctN === part.items.length ? 'is-right' : '',
+                      all && correctN < part.items.length ? 'is-wrong' : '',
                       some ? 'is-partial' : '',
                     ]
                       .filter(Boolean)
@@ -246,9 +269,15 @@ export function PractitionerRunner({ paper, examKey, title, onExit, onFinish }) 
             item={item}
             part={bundle.part}
             answer={answers[item.id]}
+            locked={lineLocked}
             onClassic={setClassic}
             onMr={toggleMr}
             onLetter={setLetter}
+          />
+          <LineFeedback
+            item={item}
+            type={bundle.part.type}
+            answer={answers[item.id]}
           />
           <OptionGrid
             part={bundle.part}
@@ -256,16 +285,18 @@ export function PractitionerRunner({ paper, examKey, title, onExit, onFinish }) 
             answers={answers}
             activeId={item.id}
             onPick={(it, value) => {
-              if (bundle.part.type === 'mr') {
+              const type = bundle.part.type
+              if (type === 'mr') {
                 setAnswers((prev) => {
                   const cur = Array.isArray(prev[it.id]) ? [...prev[it.id]] : []
+                  if (cur.length === 2) return prev
                   const i = cur.indexOf(value)
                   if (i >= 0) cur.splice(i, 1)
-                  else if (cur.length < 2) cur.push(value)
+                  else cur.push(value)
                   return { ...prev, [it.id]: cur }
                 })
               } else {
-                setAnswers((prev) => ({ ...prev, [it.id]: value }))
+                commitAnswer(it.id, type, value)
               }
               const idx = bundle.items.findIndex((x) => x.id === it.id)
               if (idx >= 0) setItemIdx(idx)
@@ -301,7 +332,14 @@ export function PractitionerRunner({ paper, examKey, title, onExit, onFinish }) 
   )
 }
 
-function ItemPrompt({ item, part, answer, onClassic, onMr, onLetter }) {
+function choiceClass(locked, selected, isCorrectChoice) {
+  if (!locked) return selected ? 'is-selected' : ''
+  if (isCorrectChoice) return 'is-correct'
+  if (selected) return 'is-wrong'
+  return ''
+}
+
+function ItemPrompt({ item, part, answer, locked, onClassic, onMr, onLetter }) {
   if (part.type === 'ar') {
     return (
       <div className="agile-pr__stem">
@@ -317,8 +355,9 @@ function ItemPrompt({ item, part, answer, onClassic, onMr, onLetter }) {
             <li key={opt.key}>
               <button
                 type="button"
-                className={`agile-option${answer === opt.key ? ' is-selected' : ''}`}
+                className={`agile-option ${choiceClass(locked, answer === opt.key, item.correct === opt.key)}`}
                 onClick={() => onLetter(opt.key)}
+                disabled={locked}
               >
                 <span className="agile-option__radio" aria-hidden />
                 <span>
@@ -344,8 +383,9 @@ function ItemPrompt({ item, part, answer, onClassic, onMr, onLetter }) {
             <li key={opt.key}>
               <button
                 type="button"
-                className={`agile-option${answer === opt.key ? ' is-selected' : ''}`}
+                className={`agile-option ${choiceClass(locked, answer === opt.key, item.correct === opt.key)}`}
                 onClick={() => onLetter(opt.key)}
+                disabled={locked}
               >
                 <span className="agile-option__radio" aria-hidden />
                 <span>
@@ -367,12 +407,16 @@ function ItemPrompt({ item, part, answer, onClassic, onMr, onLetter }) {
       <div className="agile-options">
         {item.options.map((opt) => {
           const on = multi ? picked.includes(opt) : picked === opt
+          const isCorrectChoice = multi
+            ? item.correct.includes(opt)
+            : item.correct === opt
           return (
             <button
               key={opt}
               type="button"
-              className={`agile-option${on ? ' is-selected' : ''}`}
+              className={`agile-option ${choiceClass(locked, on, isCorrectChoice)}`}
               onClick={() => (multi ? onMr(opt) : onClassic(opt))}
+              disabled={locked}
             >
               <span className="agile-option__radio" aria-hidden />
               <span>{opt}</span>
@@ -380,6 +424,35 @@ function ItemPrompt({ item, part, answer, onClassic, onMr, onLetter }) {
           )
         })}
       </div>
+    </div>
+  )
+}
+
+function LineFeedback({ item, type, answer }) {
+  const locked = answerComplete(type, answer)
+  if (type === 'mr' && !locked) {
+    const picked = Array.isArray(answer) ? answer.length : 0
+    if (picked === 0) return null
+    return (
+      <p className="agile-pr__pending">
+        Select one more answer to mark this line.
+      </p>
+    )
+  }
+  if (!locked) return null
+  const ok = scorePractitionerLine({ ...item, type }, answer)
+  return (
+    <div
+      className={`agile-zen__feedback ${ok ? 'is-right' : 'is-wrong'}`}
+      role="status"
+    >
+      <strong>{ok ? 'Correct ✓' : 'Not quite ✗'}</strong>
+      {!ok && (
+        <p className="agile-zen__answer">
+          Answer: <span>{practitionerCorrectLabel({ ...item, type })}</span>
+        </p>
+      )}
+      {item.explain ? <p className="agile-zen__explain">{item.explain}</p> : null}
     </div>
   )
 }
@@ -412,8 +485,8 @@ function OptionGrid({ part, items, answers, activeId, onPick }) {
   return (
     <div className="agile-pr__grid-wrap">
       <p className="agile-pr__grid-hint">
-        Option grid — click an oval on the active row. You can change answers
-        until time expires.
+        Option grid — click an oval on the active row. The line is marked as
+        soon as the answer is complete.
       </p>
       <table className="agile-pr__grid">
         <thead>
@@ -431,12 +504,28 @@ function OptionGrid({ part, items, answers, activeId, onPick }) {
               {cols.map((c) => {
                 const val = valueFor(it, c)
                 if (!val) return <td key={c} />
+                const on = selected(it, c)
+                const rowLocked = answerComplete(part.type, answers[it.id])
+                const isCorrectChoice =
+                  part.type === 'mr'
+                    ? it.correct.includes(val)
+                    : part.type === 'classic'
+                      ? val === it.correct
+                      : c === it.correct
                 return (
                   <td key={c}>
                     <button
                       type="button"
-                      className={`agile-pr__oval${selected(it, c) ? ' is-on' : ''}`}
+                      className={[
+                        'agile-pr__oval',
+                        !rowLocked && on ? 'is-on' : '',
+                        rowLocked && isCorrectChoice ? 'is-right' : '',
+                        rowLocked && on && !isCorrectChoice ? 'is-wrong' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
                       aria-label={`Row ${i + 1} option ${c}`}
+                      disabled={rowLocked}
                       onClick={() => onPick(it, val)}
                     />
                   </td>
